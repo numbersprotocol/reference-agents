@@ -1,0 +1,19 @@
+# Numbers Protocol Reference Agents — Python dependencies
+# Tested with Python 3.11
+
+# Core: Capture SDK
+numbersprotocol-capture-sdk>=0.2.1
+
+# HTTP client (also a Capture SDK dependency)
+httpx>=0.25.0
+
+# Environment variable loading
+python-dotenv>=1.0.0
+
+# XML parsing for arXiv RSS (ResearchProve)
+# stdlib xml.etree.ElementTree is used — no extra dep needed
+
+# Optional: Slack alerting (used in common.py via httpx — no separate SDK needed)
+
+# Optional: Replicate API for ProvArt paid mode
+# replicate>=0.22.0

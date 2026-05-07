@@ -1,0 +1,98 @@
+version: "3.9"
+
+# ============================================================
+# Numbers Protocol Reference Agents — docker-compose
+#
+# Usage:
+#   cp .env.example .env && vi .env    # fill in CAPTURE_TOKEN
+#   docker compose up -d               # start all 7 agents
+#   docker compose logs -f provart     # tail one agent
+#   docker compose ps                  # check status
+#   docker compose down                # stop all
+# ============================================================
+
+x-agent-defaults: &agent-defaults
+  build: .
+  env_file: .env
+  volumes:
+    - agent-state:/app/state
+  restart: unless-stopped
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "5"
+  healthcheck:
+    test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+    interval: 60s
+    timeout: 10s
+    retries: 3
+
+services:
+
+  provart:
+    <<: *agent-defaults
+    container_name: ref-provart
+    command: python -u provart.py
+    environment:
+      - PROVART_MODE=${PROVART_MODE:-pollinations}
+      - PROVART_INTERVAL=${PROVART_INTERVAL:-173}
+      - PROVART_DAILY_CAP=${PROVART_DAILY_CAP:-500}
+
+  newsprove:
+    <<: *agent-defaults
+    container_name: ref-newsprove
+    command: python -u newsprove.py
+    environment:
+      - NEWSPROVE_INTERVAL=${NEWSPROVE_INTERVAL:-290}
+      - NEWSPROVE_DAILY_CAP=${NEWSPROVE_DAILY_CAP:-300}
+
+  agentlog:
+    <<: *agent-defaults
+    container_name: ref-agentlog
+    command: python -u agentlog.py
+    environment:
+      - AGENTLOG_MODE=${AGENTLOG_MODE:-template}
+      - AGENTLOG_INTERVAL=${AGENTLOG_INTERVAL:-430}
+      - AGENTLOG_DAILY_CAP=${AGENTLOG_DAILY_CAP:-200}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+
+  dataprove:
+    <<: *agent-defaults
+    container_name: ref-dataprove
+    command: python -u dataprove.py
+    environment:
+      - DATAPROVE_INTERVAL=${DATAPROVE_INTERVAL:-430}
+      - DATAPROVE_DAILY_CAP=${DATAPROVE_DAILY_CAP:-200}
+
+  socialprove:
+    <<: *agent-defaults
+    container_name: ref-socialprove
+    command: python -u socialprove.py
+    environment:
+      - SOCIALPROVE_INTERVAL=${SOCIALPROVE_INTERVAL:-430}
+      - SOCIALPROVE_DAILY_CAP=${SOCIALPROVE_DAILY_CAP:-200}
+      - REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID:-}
+      - REDDIT_CLIENT_SECRET=${REDDIT_CLIENT_SECRET:-}
+
+  researchprove:
+    <<: *agent-defaults
+    container_name: ref-researchprove
+    command: python -u researchprove.py
+    environment:
+      - RESEARCHPROVE_INTERVAL=${RESEARCHPROVE_INTERVAL:-576}
+      - RESEARCHPROVE_DAILY_CAP=${RESEARCHPROVE_DAILY_CAP:-150}
+
+  codeprove:
+    <<: *agent-defaults
+    container_name: ref-codeprove
+    command: python -u codeprove.py
+    environment:
+      - CODEPROVE_INTERVAL=${CODEPROVE_INTERVAL:-1728}
+      - CODEPROVE_DAILY_CAP=${CODEPROVE_DAILY_CAP:-50}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GITHUB_ORG=${GITHUB_ORG:-numbersprotocol}
+
+volumes:
+  agent-state:
+    driver: local
