@@ -52,6 +52,51 @@ def get_capture():
     return Capture(token=token)
 
 
+def get_admin_headers() -> dict:
+    """Return HTTP headers with Django admin token authentication.
+
+    Uses Capture_Token_Admin_Omni (Omni Cloud Credentials) for elevated access
+    to the Numbers Protocol Django REST Framework backend.
+
+    Checks env vars in order:
+      1. Capture_Token_Admin_Omni  (Omni Cloud Credentials name)
+      2. CAPTURE_ADMIN_TOKEN       (generic / .env name)
+
+    Returns an empty dict (no Authorization header) if no admin token is found,
+    so callers fall back to unauthenticated access gracefully.
+    """
+    token = os.environ.get("Capture_Token_Admin_Omni") or os.environ.get("CAPTURE_ADMIN_TOKEN")
+    if not token:
+        return {}
+    return {"Authorization": f"Token {token}"}
+
+
+def admin_api_get(url: str, params: Optional[dict] = None, timeout: float = 30.0) -> dict:
+    """Perform a GET request to the Numbers Protocol API with admin auth.
+
+    Includes the Django admin token when available, falls back to
+    unauthenticated if the token is not configured.
+
+    Args:
+        url:     Full URL to request (e.g. https://api.numbersprotocol.io/api/v3/assets/).
+        params:  Optional query parameters dict.
+        timeout: Request timeout in seconds.
+
+    Returns:
+        Parsed JSON response as a dict.
+
+    Raises:
+        httpx.HTTPStatusError: on non-2xx responses.
+    """
+    headers = {
+        "User-Agent": "Numbers-RefAgents/1.0",
+        **get_admin_headers(),
+    }
+    resp = httpx.get(url, params=params, headers=headers, timeout=timeout)
+    resp.raise_for_status()
+    return resp.json()
+
+
 # ── Registration with retry ──────────────────────────────────────────────────
 
 def register_with_retry(
