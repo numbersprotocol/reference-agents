@@ -37,4 +37,4 @@
 - **Workspace infra limits**: Docker not available, supervisord not installed. Only bash-based watchdog is viable for auto-restart. VPS ticket (Ticket 5) added to tickets.md.
 
 ---
-_Last system refresh: 2026-05-08 05:06 UTC_
+_Last system refresh: 2026-05-08 05:17 UTC_

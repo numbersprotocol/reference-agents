@@ -1,32 +1,39 @@
 """
-newsprove.py — NewsProve Reference Agent  (#2)  — Screenshot Edition
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Monitors Hacker News (top and new stories) **and** RSS feeds from major
-tech publications.  For each new story it:
+newsprove.py — NewsProve Reference Agent  (#2)  — Screenshot + Commit Edition
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+For each new story, the agent:
 
-  1. Opens the URL in a headless Chromium browser (Playwright)
-  2. Takes a viewport screenshot (PNG)
-  3. Computes SHA-256 of the fully-rendered HTML (content integrity hash)
-  4. Registers the screenshot + hash + metadata on Numbers Mainnet
+  1. Opens the URL in headless Chromium (Playwright)
+  2. Takes a viewport screenshot (PNG) — visual proof of the page
+  3. Computes SHA-256 of the fully-rendered HTML — content integrity hash
+  4. Extracts the first 500 chars of visible body text — content excerpt
+  5. Registers the screenshot on Numbers Mainnet  →  NID
+  6. Attaches a structured provenance commit to that NID:
 
-This produces a **content provenance record**: the screenshot is the
-visual proof of what the page looked like; the hash lets anyone verify
-whether the content changed after registration.
+       {
+         "agent":          "Numbers Protocol Reference Agent #2 (NewsProve)",
+         "source":         "Hacker News",
+         "url":            "https://...",
+         "title":          "...",
+         "author":         "...",
+         "score":          42,
+         "comments":       17,
+         "published_at":   "2026-05-08T04:23:06Z",
+         "screenshot_at":  "2026-05-08T04:23:15Z",
+         "content_hash":   "sha256:a3f9c2...",
+         "content_excerpt": "First 500 characters of visible body text..."
+       }
 
-Fallback: if Playwright fails (paywall, timeout, bot-block), the agent
-falls back to registering a JSON metadata record (original behaviour).
+  Fallback: if Playwright fails (paywall, timeout, bot-block), falls back to
+  registering a JSON metadata record — no screenshot, no commit.
 
-Target:  250 transactions/day  (~1 every 290 seconds; slower due to
-         Playwright page load time per story)
-Cost:    $0/day  (Hacker News Firebase API + public RSS + free Playwright)
+Target:  250 transactions/day
+Cost:    $0/day
 
 Data sources:
   - Hacker News: top + new stories (Firebase API)
-  - RSS feeds: TechCrunch, Ars Technica, The Verge, Wired, MIT Tech
-    Review, VentureBeat, Product Hunt, HackerNoon, TechMeme, TheNextWeb
-
-Deduplication: stores seen IDs in state/newsprove_seen.json.
-  HN items use their numeric ID; RSS items use feed_name + entry link hash.
+  - RSS: TechCrunch, Ars Technica, The Verge, Wired, MIT Tech Review,
+    VentureBeat, Product Hunt, HackerNoon, TechMeme, TheNextWeb
 
 Env vars:
   NEWSPROVE_INTERVAL             Cycle sleep seconds (default 290)
@@ -65,23 +72,22 @@ from common import (
 
 load_dotenv()
 
-AGENT_ID = "Numbers Protocol Reference Agent #2 (NewsProve)"
+AGENT_ID    = "Numbers Protocol Reference Agent #2 (NewsProve)"
 AGENT_SHORT = "newsprove"
-logger = logging.getLogger(AGENT_SHORT)
+logger      = logging.getLogger(AGENT_SHORT)
 
-INTERVAL            = int(os.getenv("NEWSPROVE_INTERVAL", "290"))
-DAILY_CAP           = int(os.getenv("NEWSPROVE_DAILY_CAP", "250"))
-SCREENSHOT_TIMEOUT  = int(os.getenv("NEWSPROVE_SCREENSHOT_TIMEOUT", "15000"))
-SCREENSHOT_WIDTH    = int(os.getenv("NEWSPROVE_SCREENSHOT_WIDTH", "1280"))
-SCREENSHOT_HEIGHT   = int(os.getenv("NEWSPROVE_SCREENSHOT_HEIGHT", "800"))
+INTERVAL           = int(os.getenv("NEWSPROVE_INTERVAL", "290"))
+DAILY_CAP          = int(os.getenv("NEWSPROVE_DAILY_CAP", "250"))
+SCREENSHOT_TIMEOUT = int(os.getenv("NEWSPROVE_SCREENSHOT_TIMEOUT", "15000"))
+SCREENSHOT_WIDTH   = int(os.getenv("NEWSPROVE_SCREENSHOT_WIDTH", "1280"))
+SCREENSHOT_HEIGHT  = int(os.getenv("NEWSPROVE_SCREENSHOT_HEIGHT", "800"))
 
 HN_TOP_URL  = "https://hacker-news.firebaseio.com/v0/topstories.json"
 HN_NEW_URL  = "https://hacker-news.firebaseio.com/v0/newstories.json"
 HN_ITEM_URL = "https://hacker-news.firebaseio.com/v0/item/{id}.json"
 
-FETCH_TOP_N = 200  # consider this many top/new stories per cycle
+FETCH_TOP_N = 200
 
-# Realistic browser UA — reduces bot-detection rejections
 BROWSER_UA = (
     "Mozilla/5.0 (X11; Linux x86_64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -106,18 +112,20 @@ RSS_FEEDS = [
 RSS_USER_AGENT = "ProvBot/1.0 (Numbers Protocol Reference Agent; +https://numbersprotocol.io)"
 
 
-# ── Screenshot + hash ────────────────────────────────────────────────────────
+# ── Screenshot + content extraction ──────────────────────────────────────────
 
-def screenshot_page(browser, url: str, tmp_path: str) -> str | None:
+def screenshot_page(browser, url: str, tmp_path: str) -> tuple[str, str] | None:
     """
-    Open *url* in a fresh browser context, take a viewport screenshot,
-    and compute SHA-256 of the fully-rendered HTML.
+    Open *url* in a fresh browser context.
 
-    Returns the hex content hash on success, None on any failure.
+    Returns (content_hash, excerpt) on success where:
+      content_hash — SHA-256 hex of the fully-rendered HTML
+      excerpt      — first 500 chars of normalised visible body text
+
+    Returns None on any failure (timeout, paywall, bot-block, etc.).
+
     The caller is responsible for deleting *tmp_path* afterwards.
-
-    Each call uses an isolated browser context so cookies and storage
-    do not bleed between different sites within the same cycle.
+    Each call uses an isolated context so cookies do not bleed between sites.
     """
     context = None
     page = None
@@ -131,15 +139,22 @@ def screenshot_page(browser, url: str, tmp_path: str) -> str | None:
         page = context.new_page()
         page.goto(url, timeout=SCREENSHOT_TIMEOUT, wait_until="domcontentloaded")
 
-        # Hash the fully-rendered HTML (post-JS execution) for content integrity
+        # Content hash — SHA-256 of fully-rendered HTML
         html = page.content()
         content_hash = hashlib.sha256(html.encode("utf-8")).hexdigest()
 
-        # Viewport screenshot (faster + smaller than full_page=True)
+        # Visible text excerpt — normalise whitespace, cap at 500 chars
+        try:
+            raw_text = page.inner_text("body")
+            excerpt = " ".join(raw_text.split())[:500]
+        except Exception:
+            excerpt = ""
+
+        # Viewport screenshot
         page.screenshot(path=tmp_path, full_page=False)
 
-        logger.debug(f"screenshot ok  url={url[:60]}  hash={content_hash[:12]}...")
-        return content_hash
+        logger.debug(f"screenshot ok  hash={content_hash[:12]}  url={url[:70]}")
+        return content_hash, excerpt
 
     except PlaywrightTimeout:
         logger.warning(f"screenshot timeout ({SCREENSHOT_TIMEOUT}ms)  url={url[:80]}")
@@ -158,6 +173,99 @@ def screenshot_page(browser, url: str, tmp_path: str) -> str | None:
                 context.close()
             except Exception:
                 pass
+
+
+# ── Registration helpers ──────────────────────────────────────────────────────
+
+def _attach_provenance_commit(capture, nid: str, metadata: dict) -> None:
+    """
+    Attach structured provenance metadata as a second commit on the asset.
+
+    Uses capture.update(nid, custom_metadata=...) which writes to
+    nit_commit_custom in the Numbers Protocol asset tree — a proper
+    on-chain provenance commit, not just a text caption.
+
+    Never raises — a failed commit does not invalidate the registered asset.
+    """
+    try:
+        capture.update(
+            nid,
+            commit_message="NewsProve provenance commit",
+            custom_metadata=metadata,
+        )
+        logger.debug(f"provenance commit attached  nid={nid}")
+    except Exception as exc:
+        logger.warning(f"provenance commit failed  nid={nid}  err={exc}")
+
+
+def _register_screenshot_with_commit(
+    capture,
+    browser,
+    url: str,
+    caption: str,
+    headline: str,
+    provenance: dict,
+) -> str | None:
+    """
+    Take a screenshot of *url*, register it, then attach *provenance* as a commit.
+
+    Returns the NID on success, None on failure.
+    Falls back to JSON metadata registration if Playwright fails.
+    """
+    tmp_png = f"/tmp/newsprove_{os.getpid()}_{int(time.time())}.png"
+    registered_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    result = screenshot_page(browser, url, tmp_png)
+
+    if result is not None and os.path.exists(tmp_png):
+        content_hash, excerpt = result
+
+        # Build the provenance commit payload
+        commit_payload = {
+            **provenance,
+            "screenshot_at":   registered_at,
+            "content_hash":    f"sha256:{content_hash}",
+            "content_excerpt": excerpt,
+        }
+
+        # Step 1 — register the PNG
+        try:
+            nid = register_with_retry(capture, tmp_png, caption, AGENT_SHORT)
+        finally:
+            if os.path.exists(tmp_png):
+                os.unlink(tmp_png)
+
+        if nid is None:
+            return None
+
+        # Step 2 — attach structured provenance as a commit
+        _attach_provenance_commit(capture, nid, commit_payload)
+        logger.info(
+            f"registered  nid={nid}  "
+            f"sha256={content_hash[:12]}  "
+            f"caption={caption[:60]!r}"
+        )
+        return nid
+
+    else:
+        # ── Fallback: JSON metadata only ─────────────────────────────────────
+        if os.path.exists(tmp_png):
+            os.unlink(tmp_png)
+
+        logger.info(f"screenshot failed, falling back to JSON  url={url[:80]}")
+        fallback = {
+            **provenance,
+            "registered_at":  registered_at,
+            "screenshot":     False,
+        }
+        tmp_json = write_json_tmp(fallback, prefix="newsprove_fallback_")
+        fallback_caption = f"{caption} | no-screenshot"
+        try:
+            nid = register_with_retry(capture, tmp_json, fallback_caption, AGENT_SHORT)
+            return nid
+        finally:
+            if os.path.exists(tmp_json):
+                os.unlink(tmp_json)
 
 
 # ── HN API helpers ────────────────────────────────────────────────────────────
@@ -182,18 +290,15 @@ def fetch_item(item_id: int) -> dict | None:
 # ── RSS helpers ──────────────────────────────────────────────────────────────
 
 def _strip_html(text: str) -> str:
-    """Remove HTML tags from a string."""
     return re.sub(r"<[^>]+>", "", text).strip()
 
 
 def _entry_dedup_key(feed_name: str, link: str) -> str:
-    """Create a short dedup key from feed name + link hash."""
     h = hashlib.sha256(link.encode()).hexdigest()[:12]
     return f"rss:{feed_name}:{h}"
 
 
 def _parse_rss_entries(xml_text: str, feed_name: str) -> list[dict]:
-    """Parse RSS 2.0 or Atom feed XML into a list of entry dicts."""
     entries = []
     try:
         root = ET.fromstring(xml_text)
@@ -203,7 +308,6 @@ def _parse_rss_entries(xml_text: str, feed_name: str) -> list[dict]:
 
     ns = {"atom": "http://www.w3.org/2005/Atom"}
 
-    # Try RSS 2.0 first (channel/item)
     items = root.findall(".//item")
     if items:
         for item in items[:30]:
@@ -223,7 +327,6 @@ def _parse_rss_entries(xml_text: str, feed_name: str) -> list[dict]:
                 })
         return entries
 
-    # Try Atom (feed/entry)
     atom_entries = root.findall("atom:entry", ns) or root.findall("entry")
     for entry in atom_entries[:30]:
         title   = (entry.findtext("atom:title", "", ns) or entry.findtext("title") or "").strip()[:200]
@@ -268,7 +371,6 @@ def _parse_rss_entries(xml_text: str, feed_name: str) -> list[dict]:
 
 
 def fetch_rss_entries(feed_name: str, feed_url: str) -> list[dict]:
-    """Fetch and parse an RSS/Atom feed, returning entry dicts."""
     try:
         resp = httpx.get(
             feed_url,
@@ -286,57 +388,10 @@ def fetch_rss_entries(feed_name: str, feed_url: str) -> list[dict]:
         return []
 
 
-# ── Registration helpers ──────────────────────────────────────────────────────
-
-def _register_screenshot(
-    capture, browser, url: str, caption_prefix: str, fallback_record: dict, agent_short: str
-) -> bool:
-    """
-    Attempt to screenshot *url* and register the PNG on-chain.
-    Falls back to registering *fallback_record* as JSON if screenshot fails.
-
-    Returns True if any registration succeeded.
-    """
-    tmp_png = f"/tmp/newsprove_{os.getpid()}_{int(time.time())}.png"
-    content_hash = screenshot_page(browser, url, tmp_png)
-    registered_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    if content_hash and os.path.exists(tmp_png):
-        # ── Screenshot path ───────────────────────────────────────────────────
-        caption = (
-            f"{caption_prefix} | "
-            f"sha256:{content_hash} | "
-            f"screenshot:{registered_at}"
-        )
-        try:
-            nid = register_with_retry(capture, tmp_png, caption, agent_short)
-            return nid is not None
-        finally:
-            if os.path.exists(tmp_png):
-                os.unlink(tmp_png)
-    else:
-        # ── Fallback: JSON metadata ───────────────────────────────────────────
-        if os.path.exists(tmp_png):
-            os.unlink(tmp_png)
-        fallback_record["screenshot"] = False
-        fallback_record["screenshot_failed_at"] = registered_at
-        tmp_json = write_json_tmp(fallback_record, prefix="newsprove_fallback_")
-        caption = f"{caption_prefix} | no-screenshot | {registered_at}"
-        try:
-            nid = register_with_retry(capture, tmp_json, caption, agent_short)
-            return nid is not None
-        finally:
-            if os.path.exists(tmp_json):
-                os.unlink(tmp_json)
-
-
 # ── Main cycles ───────────────────────────────────────────────────────────────
 
 def run_hn_cycle(capture, seen: set, cap: DailyCap, browser) -> int:
-    """Fetch unseen HN stories, screenshot each, and register on-chain."""
     registered = 0
-
-    # Alternate between top and new feeds for variety
     feed = "new" if (int(time.time()) // 3600) % 2 == 0 else "top"
     try:
         ids = fetch_story_ids(feed)
@@ -359,28 +414,26 @@ def run_hn_cycle(capture, seen: set, cap: DailyCap, browser) -> int:
         url   = item.get("url", "")
         title = item.get("title", "")
 
-        caption_prefix = (
-            f"{AGENT_ID} | "
-            f"HN#{item_id} | "
-            f"{title[:60]} | "
-            f"score:{item.get('score', 0)} comments:{item.get('descendants', 0)} | "
-            f"published:{ts}"
-        )
-        fallback_record = {
+        caption  = f"{AGENT_ID} | HN#{item_id} | {title[:80]} | {ts}"
+        headline = title[:25]
+
+        provenance = {
             "agent":        AGENT_ID,
             "source":       "Hacker News",
             "hn_id":        item_id,
-            "title":        title,
+            "feed":         feed,
             "url":          url,
+            "title":        title,
             "author":       item.get("by", ""),
             "score":        item.get("score", 0),
             "comments":     item.get("descendants", 0),
             "published_at": ts,
-            "feed":         feed,
         }
 
-        ok = _register_screenshot(capture, browser, url, caption_prefix, fallback_record, AGENT_SHORT)
-        if ok:
+        nid = _register_screenshot_with_commit(
+            capture, browser, url, caption, headline, provenance
+        )
+        if nid:
             seen.add(str(item_id))
             cap.record()
             registered += 1
@@ -391,7 +444,6 @@ def run_hn_cycle(capture, seen: set, cap: DailyCap, browser) -> int:
 
 
 def run_rss_cycle(capture, seen: set, cap: DailyCap, browser) -> int:
-    """Fetch unseen RSS entries, screenshot each, and register on-chain."""
     registered = 0
     ts_now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -414,27 +466,28 @@ def run_rss_cycle(capture, seen: set, cap: DailyCap, browser) -> int:
             if dedup_key in seen:
                 continue
 
-            title = entry.get("title", "")
-            caption_prefix = (
-                f"{AGENT_ID} | "
-                f"{feed_name} | "
-                f"{title[:60]} | "
-                f"published:{entry.get('published', '')[:10]}"
-            )
-            fallback_record = {
+            title     = entry.get("title", "")
+            published = entry.get("published", "")
+
+            caption  = f"{AGENT_ID} | {feed_name} | {title[:70]} | {published[:10]}"
+            headline = title[:25]
+
+            provenance = {
                 "agent":        AGENT_ID,
                 "source":       f"RSS/{feed_name}",
                 "feed":         feed_name,
-                "title":        title,
                 "url":          link,
+                "title":        title,
                 "author":       entry.get("author", ""),
                 "description":  entry.get("description", ""),
-                "published_at": entry.get("published", ""),
+                "published_at": published,
                 "registered_at": ts_now,
             }
 
-            ok = _register_screenshot(capture, browser, link, caption_prefix, fallback_record, AGENT_SHORT)
-            if ok:
+            nid = _register_screenshot_with_commit(
+                capture, browser, link, caption, headline, provenance
+            )
+            if nid:
                 seen.add(dedup_key)
                 cap.record()
                 registered += 1
@@ -447,7 +500,7 @@ def run_rss_cycle(capture, seen: set, cap: DailyCap, browser) -> int:
 
 
 def run_cycle(capture, seen: set, cap: DailyCap) -> int:
-    """Launch a Chromium browser, run HN + RSS cycles, then close it."""
+    """Launch Chromium, run HN + RSS cycles, then close."""
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
             headless=True,
@@ -471,10 +524,10 @@ def run_cycle(capture, seen: set, cap: DailyCap) -> int:
 def main():
     setup_rotating_log(AGENT_SHORT)
     logger.info(
-        f"NewsProve starting | mode=screenshot | interval={INTERVAL}s | "
+        f"NewsProve starting | mode=screenshot+commit | interval={INTERVAL}s | "
         f"daily_cap={DAILY_CAP} | screenshot_timeout={SCREENSHOT_TIMEOUT}ms"
     )
-    slack_alert("[NewsProve] started (screenshot mode)", level="INFO")
+    slack_alert("[NewsProve] started (screenshot + provenance commit mode)", level="INFO")
 
     capture = get_capture()
     cap     = DailyCap(DAILY_CAP)
