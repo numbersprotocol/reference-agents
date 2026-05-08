@@ -1,8 +1,10 @@
 """
 socialprove.py — SocialProve Reference Agent  (#5)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Monitors AI/ML communities and registers each post's metadata as a
-provenance record on Numbers Mainnet.
+Monitors AI/ML communities and registers each post as a provenance
+record on Numbers Mainnet. For Reddit self-posts the body text is
+captured and SHA-256 hashed — preserving content that moderators
+may later delete or edit.
 
 Primary source:  Reddit — r/MachineLearning, r/LocalLLaMA, r/artificial
                  via OAuth2 client_credentials (REDDIT_CLIENT_ID +
@@ -18,6 +20,7 @@ Usage:
 """
 
 import base64
+import hashlib
 import logging
 import os
 import re
@@ -124,21 +127,35 @@ def run_reddit(capture, seen: set, cap: DailyCap, token: str) -> int:
             ).strftime("%Y-%m-%dT%H:%M:%SZ")
             ts_now  = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+            # Capture body text for self-posts (text content the mod may delete)
+            is_self = post.get("is_self", False)
+            raw_selftext = post.get("selftext", "") if is_self else ""
+            # Normalize whitespace; skip placeholder strings Reddit injects
+            if raw_selftext in ("[deleted]", "[removed]", ""):
+                raw_selftext = ""
+            selftext_content = " ".join(raw_selftext.split())[:1000] if raw_selftext else None
+            selftext_hash = (
+                "sha256:" + hashlib.sha256(raw_selftext.encode("utf-8")).hexdigest()
+                if raw_selftext else None
+            )
+
             record = {
-                "agent":        AGENT_ID,
-                "source":       "Reddit",
-                "subreddit":    subreddit,
-                "post_id":      post_id,
-                "title":        post.get("title", "")[:200],
-                "url":          post.get("url", ""),
-                "permalink":    f"https://reddit.com{post.get('permalink', '')}",
-                "author":       post.get("author", "[deleted]"),
-                "score":        post.get("score", 0),
-                "num_comments": post.get("num_comments", 0),
-                "flair":        post.get("link_flair_text"),
-                "is_self":      post.get("is_self", False),
-                "posted_at":    ts_post,
-                "registered_at": ts_now,
+                "agent":           AGENT_ID,
+                "source":          "Reddit",
+                "subreddit":       subreddit,
+                "post_id":         post_id,
+                "title":           post.get("title", "")[:200],
+                "url":             post.get("url", ""),
+                "permalink":       f"https://reddit.com{post.get('permalink', '')}",
+                "author":          post.get("author", "[deleted]"),
+                "score":           post.get("score", 0),
+                "num_comments":    post.get("num_comments", 0),
+                "flair":           post.get("link_flair_text"),
+                "is_self":         is_self,
+                "selftext":        selftext_content,
+                "selftext_hash":   selftext_hash,
+                "posted_at":       ts_post,
+                "registered_at":   ts_now,
             }
             tmp = write_json_tmp(record, prefix="socialprove_reddit_")
             try:

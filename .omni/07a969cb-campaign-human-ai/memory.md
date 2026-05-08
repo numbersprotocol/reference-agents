@@ -35,6 +35,14 @@
 - **Mainnet**: 3,044 txns on Day 2 (above 3,000 target). Day 3 at risk due to agent downtime. Wallets: 36,245
 - **Day 3 evaluator score**: 2/4. Primary blocker shifted from throughput (fixed) to agent reliability. Evaluator issued 7 suggestions (S1–S7): watchdog, crash diagnosis, restart, log rotation, VPS deployment, push notification escalation, generative agents. Executor created Day 3 Action Plan (T17–T26) in todo.md.
 - **Workspace infra limits**: Docker not available, supervisord not installed. Only bash-based watchdog is viable for auto-restart. VPS ticket (Ticket 5) added to tickets.md.
+- **Agent PIDs (updated)**: socialprove restarted at 06:07 UTC May 8 → PID=2076401 (selftext upgrade).
+
+## Agent Notes
+
+- **NewsProve (#2)**: Upgraded to screenshot + provenance commit mode. Registers PNG screenshot of article page; then attaches `capture.update()` commit with structured JSON: source, title, author, score, content_hash (SHA-256 of rendered HTML), content_excerpt (500 chars visible body text). Two-step flow: `register(png)` → `update(nid, custom_metadata=...)`. Verified on-chain with IPFS asset tree.
+- **AgentLog (#3)**: Honest use case: AI research archival, not agent audit trail. Template mode is deterministic keyword extraction; Groq mode is the genuine value (real LLM inference logged as verifiable record). Better framing: timestamped AI research index, not audit trail.
+- **DataProve (#4)**: Primary value — cross-source atomic snapshots useful to check correlation over multiple data points (weather + crypto + air quality + earthquake + forex all captured in the same cycle = correlated timestamp). Secondary: independent third-party notarization and earthquake initial readings before USGS revises them.
+- **SocialProve (#5)**: Upgraded to capture selftext for Reddit self-posts. `selftext` (up to 1000 chars, whitespace-normalized) + `selftext_hash` (sha256) added to Reddit records. Handles `[deleted]`/`[removed]` placeholders. ~75% of ML subreddit posts are self-posts with content — these now have verifiable content preservation, useful when mods delete posts. Mastodon path already captured `content` (400 chars). Restarted 06:07 UTC May 8.
 
 ---
-_Last system refresh: 2026-05-08 05:17 UTC_
+_Last system refresh: 2026-05-08 06:08 UTC_
