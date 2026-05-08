@@ -31,8 +31,10 @@ from common import (
     DailyCap,
     get_capture,
     load_seen_ids,
+    maybe_collect,
     register_with_retry,
     save_seen_ids,
+    setup_rotating_log,
     slack_alert,
     write_json_tmp,
 )
@@ -212,6 +214,7 @@ def run_cycle(capture, seen: set, cap: DailyCap) -> int:
 
 
 def main():
+    setup_rotating_log(AGENT_SHORT)
     logger.info(
         f"AgentLog starting | mode={MODE} | interval={INTERVAL}s | daily_cap={DAILY_CAP}"
     )
@@ -232,6 +235,7 @@ def main():
             time.sleep(sleep_s + 1)
             continue
 
+        maybe_collect()
         time.sleep(INTERVAL)
 
 

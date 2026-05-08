@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 import httpx
 from dotenv import load_dotenv
 
-from common import DailyCap, get_capture, register_with_retry, slack_alert
+from common import DailyCap, get_capture, maybe_collect, register_with_retry, setup_rotating_log, slack_alert
 
 load_dotenv()
 
@@ -132,6 +132,7 @@ def run_once(capture, counter: int) -> bool:
 
 
 def main():
+    setup_rotating_log(AGENT_SHORT)
     logger.info(
         f"ProvArt starting | mode={MODE} | interval={INTERVAL}s | daily_cap={DAILY_CAP}"
     )
@@ -153,6 +154,7 @@ def main():
             time.sleep(sleep_s + 1)
             continue
 
+        maybe_collect()
         time.sleep(INTERVAL)
 
 

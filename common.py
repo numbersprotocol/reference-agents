@@ -10,8 +10,10 @@ Provides:
   - Temp file helpers
 """
 
+import gc
 import json
 import logging
+import logging.handlers
 import os
 import tempfile
 import time
@@ -31,6 +33,24 @@ logging.basicConfig(
     format="%(asctime)s  %(levelname)-7s  [%(name)s]  %(message)s",
     datefmt="%Y-%m-%dT%H:%M:%SZ",
 )
+
+
+def setup_rotating_log(agent_name: str, log_dir: str = "logs", max_bytes: int = 1_048_576, backup_count: int = 2) -> None:
+    """
+    Attach a RotatingFileHandler to the root logger for the given agent.
+    Rotates at 1 MB, keeps 2 backups — prevents unbounded log growth.
+    Called once at agent startup.
+    """
+    log_path = Path(log_dir) / f"{agent_name}.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    handler = logging.handlers.RotatingFileHandler(
+        log_path, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"
+    )
+    handler.setFormatter(logging.Formatter(
+        "%(asctime)s  %(levelname)-7s  [%(name)s]  %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%SZ",
+    ))
+    logging.getLogger().addHandler(handler)
 
 
 # ── Capture client ────────────────────────────────────────────────────────────
@@ -218,6 +238,24 @@ def write_text_tmp(text: str, prefix: str = "agent_", suffix: str = ".txt") -> s
     ) as f:
         f.write(text)
         return f.name
+
+
+# ── Memory hygiene ───────────────────────────────────────────────────────────
+
+_gc_cycle_counter: int = 0
+_GC_EVERY_N_CYCLES: int = 50  # run gc.collect() every 50 agent cycles
+
+
+def maybe_collect(force: bool = False) -> None:
+    """
+    Periodically invoke the garbage collector to prevent memory accumulation
+    across long-running agent sessions.  Called once per agent loop cycle.
+    """
+    global _gc_cycle_counter
+    _gc_cycle_counter += 1
+    if force or _gc_cycle_counter >= _GC_EVERY_N_CYCLES:
+        gc.collect()
+        _gc_cycle_counter = 0
 
 
 # ── Daily rate-cap helper ─────────────────────────────────────────────────────
