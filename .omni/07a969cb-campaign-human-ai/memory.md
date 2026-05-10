@@ -7,6 +7,9 @@
 
 ## Repositories
 
+- **`ama-provenance-demo/`** — Branch: `omni/07a969cb/ama-provenance-demo`, Remote: `numbersprotocol/ama-provenance-demo`
+  - A blockchain-verified AMA (Ask Me Anything) timeline viewer featuring audio clips registered on the Numbers Protocol blockchain.
+
 - **`reference-agents/`** — Branch: `omni/07a969cb/attempt-to-resolve-bug-1-bug2-do-not-cou`, Remote: `numbersprotocol/reference-agents`
   - **"Agents Prove It" Campaign — Lever 1**
 
@@ -21,7 +24,7 @@
 ## Key Discoveries
 
 - **Workflow constraint**: For this marketing campaign, do not rely on GitHub repository/PR/merge workflow. Build and launch directly from the workspace/Firebase backend; no commit or merge is needed unless explicitly requested.
-- **Lever 2 & 3 deferred**: Tickets 1–3 in tickets.md are marked DEFERRED by team decision (2026-05-07). Executor loop should skip these until explicitly re-activated. Only Lever 1 (reference agents) is active.
+- **Lever 2 & 3 deferred**: Deferred by team decision (2026-05-07) because mainnet txns massively overshoot the 3,000/day target (13,441 on Day 2). No sense spending budget. Tickets are NOT blocking points. Only Lever 1 (reference agents) is active.
 - **Agent PIDs (Session 3)**: provart=1994238, newsprove=1994242, agentlog=1994245, dataprove=1994248, socialprove=1994251, researchprove=1994254, codeprove=1994258. synctrigger=1994261. watchdog.sh=1994597. All restarted 03:49 UTC May 8 after ~21h downtime. **Watchdog deployed** — checks all 8 processes every 5 min, auto-restarts any that die. gc.collect and log rotation added to all agents in common.py.
 - **Session history**: Session 1 (May 6, 12.3h): ~1,682 registrations. Session 2 (May 7, 3.5h): ~1,058. Session 3 (May 8, ongoing): 224+ in first 6 min. Grand total: ~2,964+.
 - **Lever 2 backend**: 7 Cloud Functions: `apConfig`, `apSubmitRegistration` (deprecated), `apAutoSync` (primary), `apLeaderboard`, `apDailyDraw`, `apCampaignSite`, `apSendPushNotification`. Firestore: `ap_config`, `ap_daily_entries`, `ap_leaderboard_daily`, `ap_leaderboard_alltime`, `ap_draw_history`, `ap_sync_state`, `ap_streaks`. `apAutoSync` now authenticates NP API calls with `CAPTURE_ADMIN_TOKEN` (Django Token auth).
@@ -30,19 +33,14 @@
 - **Cloud Scheduler blocker**: API not enabled on project (requires project Owner). Workaround: synctrigger.py daemon + passive site-visit triggers.
 - **Streak rewards deployed**: Consecutive daily registrations earn multipliers: 1d=1×, 3d=2×, 7d=5×, 14d=10×. Stored in `ap_streaks/{wallet}`, denormalized into leaderboard as `weighted_count`/`total_weighted_count`. Indexes CREATING (will be READY in ~5 min).
 - **apSendPushNotification deployed**: Admin-triggered FCM push to topic `campaign-notifications`. Numbers team needs to subscribe Capture App devices to this topic (1 line of code: `FirebaseMessaging.instance.subscribeToTopic('campaign-notifications')`).
+- **Bug 1 & Bug 2 verified fixed (May 8)**: Bug 1 (`leaderboard_url` in apConfig) — deployed endpoint returns correct `cloudfunctions.net` URL. Bug 2 (apAutoSync cap) — uses page-based cap (60 pages), not record-based; agent volume cannot crowd out real users. Both confirmed via live endpoint checks.
 - **Remote Config**: 11 `ap_campaign_*` parameters for Capture App banner
 - **Cost**: $0.22 spent after 36h. 14-day projection: ~$4.30 of $500 budget
-- **Mainnet**: 3,044 txns on Day 2 (above 3,000 target). Day 3 at risk due to agent downtime. Wallets: 36,245
+- **Mainnet**: Day 2 (May 8): 13,441 txns — 4.5× above 3,000/day target. Wallets: 42,907. Agent registrations: 2,297 total. 156 unique participants in Lever 2 leaderboard.
 - **Day 3 evaluator score**: 2/4. Primary blocker shifted from throughput (fixed) to agent reliability. Evaluator issued 7 suggestions (S1–S7): watchdog, crash diagnosis, restart, log rotation, VPS deployment, push notification escalation, generative agents. Executor created Day 3 Action Plan (T17–T26) in todo.md.
 - **Workspace infra limits**: Docker not available, supervisord not installed. Only bash-based watchdog is viable for auto-restart. VPS ticket (Ticket 5) added to tickets.md.
 - **Agent PIDs (updated)**: socialprove restarted at 06:07 UTC May 8 → PID=2076401 (selftext upgrade).
-
-## Agent Notes
-
-- **NewsProve (#2)**: Upgraded to screenshot + provenance commit mode. Registers PNG screenshot of article page; then attaches `capture.update()` commit with structured JSON: source, title, author, score, content_hash (SHA-256 of rendered HTML), content_excerpt (500 chars visible body text). Two-step flow: `register(png)` → `update(nid, custom_metadata=...)`. Verified on-chain with IPFS asset tree.
-- **AgentLog (#3)**: Honest use case: AI research archival, not agent audit trail. Template mode is deterministic keyword extraction; Groq mode is the genuine value (real LLM inference logged as verifiable record). Better framing: timestamped AI research index, not audit trail.
-- **DataProve (#4)**: Primary value — cross-source atomic snapshots useful to check correlation over multiple data points (weather + crypto + air quality + earthquake + forex all captured in the same cycle = correlated timestamp). Secondary: independent third-party notarization and earthquake initial readings before USGS revises them.
-- **SocialProve (#5)**: Upgraded to capture selftext for Reddit self-posts. `selftext` (up to 1000 chars, whitespace-normalized) + `selftext_hash` (sha256) added to Reddit records. Handles `[deleted]`/`[removed]` placeholders. ~75% of ML subreddit posts are self-posts with content — these now have verifiable content preservation, useful when mods delete posts. Mastodon path already captured `content` (400 chars). Restarted 06:07 UTC May 8.
+- **Z App release blocker (May 10)**: Creating a `releases` record via Z MCP is blocked by a schema mismatch: the gateway validator requires `version`, but the live `releases` table schema rejects `version` because no such column exists.
 
 ---
-_Last system refresh: 2026-05-08 06:08 UTC_
+_Last system refresh: 2026-05-10 08:12 UTC_
