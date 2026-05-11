@@ -70,7 +70,12 @@ def _generate_pollinations(prompt: str, seed: int) -> bytes:
         f"https://image.pollinations.ai/prompt/{encoded}"
         f"?width=512&height=512&seed={seed}&nologo=true&model=flux"
     )
-    resp = httpx.get(url, timeout=90, follow_redirects=True)
+    # Use explicit per-phase timeouts to prevent hanging on slow streaming responses.
+    # connect=10s: fail fast if server unreachable
+    # read=120s: max wait between data chunks — Pollinations FLUX can take 60-90s to start
+    # pool=5s: max wait for connection from pool
+    timeout = httpx.Timeout(connect=10.0, read=120.0, write=10.0, pool=5.0)
+    resp = httpx.get(url, timeout=timeout, follow_redirects=True)
     resp.raise_for_status()
     if len(resp.content) < 1000:
         raise ValueError(f"Pollinations returned suspiciously small payload ({len(resp.content)} bytes)")

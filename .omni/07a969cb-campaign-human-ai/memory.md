@@ -28,7 +28,8 @@
 
 - **Workflow constraint**: For this marketing campaign, do not rely on GitHub repository/PR/merge workflow. Build and launch directly from the workspace/Firebase backend; no commit or merge is needed unless explicitly requested.
 - **Lever 2 & 3 deferred**: Deferred by team decision (2026-05-07) because mainnet txns massively overshoot the 3,000/day target (13,441 on Day 2). No sense spending budget. Tickets are NOT blocking points. Only Lever 1 (reference agents) is active.
-- **Agent PIDs (Session 4 — May 10)**: provart=3415639, newsprove=3415641, agentlog=3415643, dataprove=3415645, socialprove=3415647, researchprove=3415649, codeprove=3415651. watchdog=3416689, synctrigger=3416721. All restarted 12:10 UTC May 10 (Crash 4 — fourth workspace process lifecycle kill event). 3,921 total registrations at restart.
+- **Agent PIDs (Session 8 — May 11, 04:35 UTC)**: provart=71209, newsprove=71210, agentlog=71211, dataprove=71212, socialprove=71213, researchprove=71215, codeprove=71217. watchdog=71282, synctrigger=71283. Crash 8 restart (8th crash total). Session durations: 6h → 27min → 32min → 1h46min → ongoing. Cumulative registrations: ~9,649.
+- **Z App ticket overdue (May 11)**: Ticket `18a4d931` due date 2026-05-11 passed. Still `in_progress`, no resolution. Executor posted urgency comment `02998130` at 00:32 UTC May 11 flagging session collapse and 3 blocking human items.
 - **Session history**: Session 1 (May 6, 12.3h): ~1,682 registrations. Session 2 (May 7, 3.5h): ~1,058. Session 3 (May 8, ~21h+): ~2,964+. Session 4 (May 10, 12:10 UTC+): ongoing. Crash pattern is workspace process lifecycle kills — VPS deployment (Ticket 5) is the only permanent fix.
 - **synctrigger.py secret**: Uses header `X-Scheduler-Secret: ap-sync-2026` to authenticate to apAutoSync. Manual trigger: `python3 trigger_sync.py` in reference-agents/.
 - **Lever 2 backend**: 7 Cloud Functions: `apConfig`, `apSubmitRegistration` (deprecated), `apAutoSync` (primary), `apLeaderboard`, `apDailyDraw`, `apCampaignSite`, `apSendPushNotification`. Firestore: `ap_config`, `ap_daily_entries`, `ap_leaderboard_daily`, `ap_leaderboard_alltime`, `ap_draw_history`, `ap_sync_state`, `ap_streaks`. `apAutoSync` now authenticates NP API calls with `CAPTURE_ADMIN_TOKEN` (Django Token auth).
@@ -45,7 +46,12 @@
 - **Workspace infra limits**: Docker not available, supervisord not installed. Only bash-based watchdog is viable for auto-restart. VPS ticket (Ticket 5) added to tickets.md.
 - **Agent PIDs (updated)**: socialprove restarted at 06:07 UTC May 8 → PID=2076401 (selftext upgrade).
 - **Z App release workflow (May 10)**: Release `8db13ad1-a887-4031-bd6a-47af5809fdd1` created for Agents Prove It Lever 2 with Omni AI Agent as owner, Steffen as confirmation reviewer, and Tammy as approval reviewer. Including `version` plus workflow reviewer fields allowed Z MCP creation.
-- **Z App agent ticket (May 10)**: Agent ticket `18a4d931-f3a0-404c-b0d8-069432bf2434` created for `proposals/tickets.md` Ticket 1 (Agents Prove It Lever 2 Capture App Campaign Integration), assigned to Steffen (`steffendarwin@numbersprotocol.io`), status `open`, due `2026-05-11`.
+- **Z App agent ticket (May 10)**: Agent ticket `18a4d931-f3a0-404c-b0d8-069432bf2434` for `proposals/tickets.md` Ticket 1 (Agents Prove It Lever 2 Capture App Campaign Integration) is verified `open`, high priority, assigned to Steffen (`steffendarwin@numbersprotocol.io`), due `2026-05-11`, not resolved/archived/deleted. Remaining criteria: FCM push/subscription, Cloud Scheduler cron for `apAutoSync`, `LUCKY_DRAW_WALLET_PRIVATE_KEY` for `apDailyDraw`, and production Capture App banner visibility confirmation.
+
+- **apAutoSync bug (May 11)**: Root cause diagnosed — `CAPTURE_ADMIN_TOKEN` env var scopes `/api/v3/assets/` to 0 results. Public API (no auth) returns 162,687 assets. Fix prepared in source (`lever2-functions/src/ap-auto-sync.ts`) but deployment blocked by IAM (`iam.serviceAccounts.ActAs`). Ticket 6 created.
+- **IAM deployment blocker (May 11)**: Cannot deploy ANY Cloud Function updates. Blocks apAutoSync fix, campaign site improvements, daily draw automation. Ticket 6 in tickets.md.
+- **Day 6 evaluator score**: 3/4. Criterion 1 fails (9/10 plan activities unexecuted). C4 passes via organic growth (8,029 txns vs 3,000 target). Campaign contributes ~4-6% of daily mainnet volume.
+- **Session 7 stability**: Running 1.5h+ (longest since Session 4's 6h). 1,962 registrations. The 27-32min collapse pattern may have been transient.
 
 ---
-_Last system refresh: 2026-05-10 17:28 UTC_
+_Last system refresh: 2026-05-11 04:43 UTC_
