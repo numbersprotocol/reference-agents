@@ -28,7 +28,7 @@
 
 - **Workflow constraint**: For this marketing campaign, do not rely on GitHub repository/PR/merge workflow. Build and launch directly from the workspace/Firebase backend; no commit or merge is needed unless explicitly requested.
 - **Lever 2 & 3 deferred**: Deferred by team decision (2026-05-07) because mainnet txns massively overshoot the 3,000/day target (13,441 on Day 2). No sense spending budget. Tickets are NOT blocking points. Only Lever 1 (reference agents) is active.
-- **Agent PIDs (Session 8 — May 11, 04:35 UTC)**: provart=71209, newsprove=71210, agentlog=71211, dataprove=71212, socialprove=71213, researchprove=71215, codeprove=71217. watchdog=71282, synctrigger=71283. Crash 8 restart (8th crash total). Session durations: 6h → 27min → 32min → 1h46min → ongoing. Cumulative registrations: ~9,649.
+- **Agent PIDs (Session 15 — May 12, 00:50 UTC)**: provart=762970, newsprove=762971, agentlog=762973, dataprove=762974, socialprove=762975, researchprove=762976, codeprove=762977. watchdog=762968, synctrigger=762969. Crash 15 restart. Session 14 lasted ~3h (~1,141 unique regs). Day 7 total: ~6,164 unique regs (8 sessions). Cumulative: ~14,297.
 - **Z App ticket overdue (May 11)**: Ticket `18a4d931` due date 2026-05-11 passed. Still `in_progress`, no resolution. Executor posted urgency comment `02998130` at 00:32 UTC May 11 flagging session collapse and 3 blocking human items.
 - **Session history**: Session 1 (May 6, 12.3h): ~1,682 registrations. Session 2 (May 7, 3.5h): ~1,058. Session 3 (May 8, ~21h+): ~2,964+. Session 4 (May 10, 12:10 UTC+): ongoing. Crash pattern is workspace process lifecycle kills — VPS deployment (Ticket 5) is the only permanent fix.
 - **synctrigger.py secret**: Uses header `X-Scheduler-Secret: ap-sync-2026` to authenticate to apAutoSync. Manual trigger: `python3 trigger_sync.py` in reference-agents/.
@@ -52,6 +52,32 @@
 - **IAM deployment blocker (May 11)**: Cannot deploy ANY Cloud Function updates. Blocks apAutoSync fix, campaign site improvements, daily draw automation. Ticket 6 in tickets.md.
 - **Day 6 evaluator score**: 3/4. Criterion 1 fails (9/10 plan activities unexecuted). C4 passes via organic growth (8,029 txns vs 3,000 target). Campaign contributes ~4-6% of daily mainnet volume.
 - **Session 7 stability**: Running 1.5h+ (longest since Session 4's 6h). 1,962 registrations. The 27-32min collapse pattern may have been transient.
+- **ProvArt timeout fix (May 11)**: Changed `httpx.Timeout(read=60.0)` → `read=120.0` in `provart.py`. Pollinations FLUX needs 60-90s to generate; 60s was too tight. Confirmed working after fix.
+- **Z App VPS ticket (May 11)**: Agent ticket `f3b56074-794d-49d1-b509-05a7ac30b28e` created for Ticket 5 (VPS Deployment). Assigned to Steffen, high priority, due 2026-05-13.
+
+- **Z App VPS ticket reassigned (May 11)**: Ticket `f3b56074` reassigned from Steffen to Sherry (`sherry@numbersprotocol.io`) per user request.
+- **Session 10 stable (May 11 10:10 UTC)**: First loop iteration with no crash/restart needed. 1h 28min uptime. ProvArt timeout fix strongly correlated with session stability.
+
+- **Session 11 stable (May 11 14:11 UTC)**: Second consecutive clean iteration. 1h 27min uptime. Estimated true cumulative: ~11,184+ unique registrations (log rotation losing oldest entries — count from rotated files is no longer reliable).
+
+- **Session duration stochastic (May 11)**: Post-ProvArt fix sessions range 16min to 3h 21min with no predictable pattern. The fix eliminated the specific 27-38min collapse but workspace lifecycle kills remain random. Day 7 average: ~83min across 8 sessions.
+- **Day 7 total (May 11)**: ~5,061+ unique registrations across 8 sessions (Sessions 7–14). Cumulative all-time: ~13,156+.
+
+- **Day 8 Action Plan (May 12)**: T49–T58 created in todo.md responding to evaluator S1–S6. Key new tasks: T49 (restart Crash 16), T50 (standalone daily draw script bypassing IAM), T51 (mid-campaign transparency report), T54 (social media Z App ticket for Tammy). Ticket 7 added to tickets.md (Social Media Post, assigned Tammy, due May 13). VPS ticket `f3b56074` checked — still `open`, zero comments from Sherry, due tomorrow.
+- **Day 8 evaluator score (May 12)**: 3/4 (unchanged from Day 6). Criterion 1 still fails (9/10 plan activities unexecuted at campaign midpoint). C4 passes via organic growth (8,937 txns/day vs 3,000 target, +198%). Cumulative agent registrations: ~14,297. Mainnet wallets: 49,918 (+14,722 since campaign start). Executor at autonomous capability ceiling — all 48 tasks complete, all evaluator suggestions implemented. Score improvement requires human actions: social media posts, VPS deployment, daily draws. Evaluator projects 3/4 as most likely final score (~70% probability).
+- **Tickets deferred (May 12, ~02:40 UTC)**: Steffen marked Ticket 1 (Lever 2 Capture App, Z `18a4d931`) and Ticket 7 (Social Media Post, Z `1fd71ae3`) as DEFERRED. Only Ticket 5 (VPS, Z `f3b56074`, Sherry, due May 13) remains active. 3/4 final score now essentially locked — no remaining human actions expected for promotion or Lever 2.
+- **Standalone draw script (May 12)**: `standalone_daily_draw.js` created in workspace root. Accesses Firestore directly via service account (bypasses IAM-blocked Cloud Function). Confirmed working via dry-run. ap_leaderboard_daily is empty (apAutoSync bug means 0 real-user entries since May 7) — draws cannot run until Lever 2 reactivated.
+
+- **All tickets deferred (May 12, ~06:22 UTC)**: Ticket 5 VPS (`f3b56074`) deferred by Sherry after cost-benefit analysis: KPI already met via organic growth, 6 days insufficient ROI for VPS setup. All 3 Z App tickets now DEFERRED. No active human-dependent tickets remain.
+- **Day 8 final (May 12)**: 6,227 registrations — all-time daily record. 11 sessions (16–26), 10 crash-restarts, ~74% effective uptime. Session 26 still alive at 01:01 UTC May 13 (6h 16min — campaign record). Cumulative: ~20,500+. Campaign crossed 20,000 milestone.
+- **Agent PIDs (Session 26 — May 12, 18:45 UTC, still alive)**: provart=457375, newsprove=567982 (restarted 01:44 UTC May 13 — was stuck on hung HTTP 5h+), agentlog=457381, dataprove=457379, socialprove=457380, researchprove=457376, codeprove=457377, watchdog=457373, synctrigger=457395.
+- **Day 8 daily summary**: Written to execution.md — full timeline (25 events), session stability table, task completion table, key decisions (VPS deferred, all tickets deferred, standalone draw script), campaign metrics, outlook for Days 9–14.
+
+- **Day 9 evaluator score (May 13)**: 3/4 (unchanged, locked for remainder). C1 fails (75% of plan activities unexecuted), C2/C3/C4 pass. Live mainnet: 10,965 txns/day (+265% above 3,000 target), 50,097 wallets, 1,160,065 total txns. Evaluator issued 5 suggestions: S1 (final report, HIGH, start Day 12), S2 (consolidate loops), S3 (GitHub repo polish), S4 (document organic growth anomaly), S5 (graceful conclusion plan). Score definitively locked — focus remaining days on final report + repo + clean conclusion.
+
+- **Session 26 final (May 13 02:41 UTC)**: Lasted 7h 56min — campaign all-time record. 2,141 registrations. Crashed at 02:41 UTC.
+- **Session 27/28 (May 13 02:49–02:55 UTC)**: Session 27 immediate kill (~2min). Session 28 started 02:55 UTC, all 7 agents alive.
+- **Day 9 Action Plan (May 13)**: T59–T73 created. Phase 1 progress: T61 (README ✅), T62 (CHANGELOG ✅), T64 (debug cleanup ✅), T65 (deployment verified ✅). Remaining: T63 (release tag, Day 13-14), T66 (growth research, Days 10-12), Phase 2/3 (Days 12-14).
 
 ---
-_Last system refresh: 2026-05-11 04:43 UTC_
+_Last system refresh: 2026-05-13 02:59 UTC_

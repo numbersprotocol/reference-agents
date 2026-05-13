@@ -8,6 +8,38 @@ as the campaign's anchor lever, at a running cost of **~$0–1/day**.
 
 ---
 
+## Campaign Results
+
+> **Status:** Campaign in progress (Day 9 of 14, May 7–20 2026)
+
+| Metric | Value |
+|---|---|
+| **Total on-chain registrations** | **21,000+** provenance records |
+| **Peak daily output** | 6,227 registrations (Day 8) |
+| **Average daily output** | ~2,300 registrations/day |
+| **Campaign uptime sessions** | 27 sessions across 9 days |
+| **Longest session** | 7h 56min (Session 26) |
+| **Budget consumed** | ~$0.85 of $500 allocated (0.17%) |
+| **Numbers Mainnet daily txns** | 10,965 (vs. 3,000 target = +265%) |
+| **Numbers Mainnet wallets** | 50,097 (was 35,196 at campaign start) |
+
+### Per-agent contribution (Day 8 peak, 6,227 total)
+
+| Agent | Registrations | Use Case |
+|---|---|---|
+| SocialProve | ~1,800 | Reddit AI community archival |
+| DataProve | ~1,200 | Weather, seismic, air quality data |
+| ProvArt | ~1,000 | AI-generated art with provenance |
+| NewsProve | ~900 | Hacker News story archival |
+| AgentLog | ~500 | arXiv paper analysis audit trails |
+| ResearchProve | ~500 | arXiv research paper provenance |
+| CodeProve | ~300 | GitHub code change provenance |
+
+All registrations are verifiable on [mainnet.num.network](https://mainnet.num.network).
+Each record is captioned with `"Numbers Protocol Reference Agent #N"` for transparent attribution.
+
+---
+
 ## Agents at a glance
 
 | # | Agent | What it registers | Target |
