@@ -77,7 +77,11 @@
 
 - **Session 26 final (May 13 02:41 UTC)**: Lasted 7h 56min — campaign all-time record. 2,141 registrations. Crashed at 02:41 UTC.
 - **Session 27/28 (May 13 02:49–02:55 UTC)**: Session 27 immediate kill (~2min). Session 28 started 02:55 UTC, all 7 agents alive.
-- **Day 9 Action Plan (May 13)**: T59–T73 created. Phase 1 progress: T61 (README ✅), T62 (CHANGELOG ✅), T64 (debug cleanup ✅), T65 (deployment verified ✅). Remaining: T63 (release tag, Day 13-14), T66 (growth research, Days 10-12), Phase 2/3 (Days 12-14).
+- **Day 9 Action Plan (May 13)**: T59–T73 created. Phase 1 progress: T61 (README ✅), T62 (CHANGELOG ✅), T64 (debug cleanup ✅), T65 (deployment verified ✅), T67 (final report outline ✅). Remaining: T63 (release tag, Day 13-14), T66 (growth research, Days 10-12), T68-T73 (Phase 2/3, Days 12-14).
+
+- **Agent PIDs (Session 29 — May 13, 07:00 UTC)**: provart=854506, newsprove=854507, agentlog=854508, dataprove=854509, socialprove=854510, researchprove=854511, codeprove=854512, watchdog=854574, synctrigger=854575. Session 28 lasted ~56min (02:55–03:51 UTC). Day 9 regs at 07:01 UTC: 877. Cumulative: ~21,900+.
+- **Capture App active users (May 13)**: API sample (500 newest assets, 1.3h window): 2 unique non-agent uploaders (defiancemedia=27, vns86402=5). Agent `officialnumbers` = 93.6% of recent uploads. Real organic uploaders in single digits/hour.
+- **Final Report outline (T67)**: `proposals/final_report_outline.md` created — 14 sections + 5 appendices, data collection checklist (10 items), narrative framing per proposal Section 9. Ready for T68 (draft, Day 12).
 
 ---
-_Last system refresh: 2026-05-13 02:59 UTC_
+_Last system refresh: 2026-05-13 08:45 UTC_

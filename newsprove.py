@@ -37,7 +37,7 @@ Data sources:
 
 Env vars:
   NEWSPROVE_INTERVAL             Cycle sleep seconds (default 290)
-  NEWSPROVE_DAILY_CAP            Max registrations/day (default 250)
+  NEWSPROVE_DAILY_CAP            Max registrations/day (default 500)
   NEWSPROVE_SCREENSHOT_TIMEOUT   Page load timeout ms (default 15000)
   NEWSPROVE_SCREENSHOT_WIDTH     Viewport width px (default 1280)
   NEWSPROVE_SCREENSHOT_HEIGHT    Viewport height px (default 800)
@@ -77,7 +77,7 @@ AGENT_SHORT = "newsprove"
 logger      = logging.getLogger(AGENT_SHORT)
 
 INTERVAL           = int(os.getenv("NEWSPROVE_INTERVAL", "290"))
-DAILY_CAP          = int(os.getenv("NEWSPROVE_DAILY_CAP", "250"))
+DAILY_CAP          = int(os.getenv("NEWSPROVE_DAILY_CAP", "500"))
 SCREENSHOT_TIMEOUT = int(os.getenv("NEWSPROVE_SCREENSHOT_TIMEOUT", "15000"))
 SCREENSHOT_WIDTH   = int(os.getenv("NEWSPROVE_SCREENSHOT_WIDTH", "1280"))
 SCREENSHOT_HEIGHT  = int(os.getenv("NEWSPROVE_SCREENSHOT_HEIGHT", "800"))

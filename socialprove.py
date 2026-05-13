@@ -49,7 +49,7 @@ AGENT_SHORT = "socialprove"
 logger = logging.getLogger(AGENT_SHORT)
 
 INTERVAL    = int(os.getenv("SOCIALPROVE_INTERVAL", "430"))
-DAILY_CAP   = int(os.getenv("SOCIALPROVE_DAILY_CAP", "200"))
+DAILY_CAP   = int(os.getenv("SOCIALPROVE_DAILY_CAP", "700"))
 
 USER_AGENT  = "ProvBot/1.0 (Numbers Protocol Reference Agent; +https://numbersprotocol.io)"
 

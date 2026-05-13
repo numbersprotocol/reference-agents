@@ -48,7 +48,7 @@ AGENT_SHORT = "dataprove"
 logger = logging.getLogger(AGENT_SHORT)
 
 INTERVAL = int(os.getenv("DATAPROVE_INTERVAL", "430"))
-DAILY_CAP = int(os.getenv("DATAPROVE_DAILY_CAP", "200"))
+DAILY_CAP = int(os.getenv("DATAPROVE_DAILY_CAP", "700"))
 
 # ── Data sources ──────────────────────────────────────────────────────────────
 
