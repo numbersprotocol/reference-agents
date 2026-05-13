@@ -10,8 +10,10 @@ Provides:
   - Temp file helpers
 """
 
+import gc
 import json
 import logging
+import logging.handlers
 import os
 import tempfile
 import time
@@ -33,6 +35,24 @@ logging.basicConfig(
 )
 
 
+def setup_rotating_log(agent_name: str, log_dir: str = "logs", max_bytes: int = 1_048_576, backup_count: int = 2) -> None:
+    """
+    Attach a RotatingFileHandler to the root logger for the given agent.
+    Rotates at 1 MB, keeps 2 backups — prevents unbounded log growth.
+    Called once at agent startup.
+    """
+    log_path = Path(log_dir) / f"{agent_name}.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    handler = logging.handlers.RotatingFileHandler(
+        log_path, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"
+    )
+    handler.setFormatter(logging.Formatter(
+        "%(asctime)s  %(levelname)-7s  [%(name)s]  %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%SZ",
+    ))
+    logging.getLogger().addHandler(handler)
+
+
 # ── Capture client ────────────────────────────────────────────────────────────
 
 def get_capture():
@@ -50,6 +70,51 @@ def get_capture():
             "or CAPTURE_TOKEN in .env. Free token at https://docs.captureapp.xyz"
         )
     return Capture(token=token)
+
+
+def get_admin_headers() -> dict:
+    """Return HTTP headers with Django admin token authentication.
+
+    Uses Capture_Token_Admin_Omni (Omni Cloud Credentials) for elevated access
+    to the Numbers Protocol Django REST Framework backend.
+
+    Checks env vars in order:
+      1. Capture_Token_Admin_Omni  (Omni Cloud Credentials name)
+      2. CAPTURE_ADMIN_TOKEN       (generic / .env name)
+
+    Returns an empty dict (no Authorization header) if no admin token is found,
+    so callers fall back to unauthenticated access gracefully.
+    """
+    token = os.environ.get("Capture_Token_Admin_Omni") or os.environ.get("CAPTURE_ADMIN_TOKEN")
+    if not token:
+        return {}
+    return {"Authorization": f"Token {token}"}
+
+
+def admin_api_get(url: str, params: Optional[dict] = None, timeout: float = 30.0) -> dict:
+    """Perform a GET request to the Numbers Protocol API with admin auth.
+
+    Includes the Django admin token when available, falls back to
+    unauthenticated if the token is not configured.
+
+    Args:
+        url:     Full URL to request (e.g. https://api.numbersprotocol.io/api/v3/assets/).
+        params:  Optional query parameters dict.
+        timeout: Request timeout in seconds.
+
+    Returns:
+        Parsed JSON response as a dict.
+
+    Raises:
+        httpx.HTTPStatusError: on non-2xx responses.
+    """
+    headers = {
+        "User-Agent": "Numbers-RefAgents/1.0",
+        **get_admin_headers(),
+    }
+    resp = httpx.get(url, params=params, headers=headers, timeout=timeout)
+    resp.raise_for_status()
+    return resp.json()
 
 
 # ── Registration with retry ──────────────────────────────────────────────────
@@ -173,6 +238,24 @@ def write_text_tmp(text: str, prefix: str = "agent_", suffix: str = ".txt") -> s
     ) as f:
         f.write(text)
         return f.name
+
+
+# ── Memory hygiene ───────────────────────────────────────────────────────────
+
+_gc_cycle_counter: int = 0
+_GC_EVERY_N_CYCLES: int = 50  # run gc.collect() every 50 agent cycles
+
+
+def maybe_collect(force: bool = False) -> None:
+    """
+    Periodically invoke the garbage collector to prevent memory accumulation
+    across long-running agent sessions.  Called once per agent loop cycle.
+    """
+    global _gc_cycle_counter
+    _gc_cycle_counter += 1
+    if force or _gc_cycle_counter >= _GC_EVERY_N_CYCLES:
+        gc.collect()
+        _gc_cycle_counter = 0
 
 
 # ── Daily rate-cap helper ─────────────────────────────────────────────────────
