@@ -70,12 +70,7 @@ def main():
     # ── Step 4: Verify via API ────────────────────────────────────────────────
     import httpx
     time.sleep(2)
-    token = os.environ.get("Capture_Token_Admin_Omni") or os.environ.get("CAPTURE_ADMIN_TOKEN")
-    resp  = httpx.get(
-        f"https://api.numbersprotocol.io/api/v3/assets/{asset.nid}/",
-        headers={"Authorization": f"Token {token}"},
-        timeout=15,
-    )
+    resp = httpx.get(f"https://api.numbersprotocol.io/api/v3/assets/{asset.nid}/", timeout=15)
     data = resp.json()
 
     print(f"\n── Verification ─────────────────────────────────────────────")
