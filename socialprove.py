@@ -29,6 +29,7 @@ from datetime import datetime, timezone
 
 import httpx
 from dotenv import load_dotenv
+from playwright.sync_api import sync_playwright
 
 from common import (
     DailyCap,
@@ -41,6 +42,7 @@ from common import (
     slack_alert,
     write_json_tmp,
 )
+from proofsnap_capture import capture_page_screenshot
 
 load_dotenv()
 
@@ -50,6 +52,9 @@ logger = logging.getLogger(AGENT_SHORT)
 
 INTERVAL    = int(os.getenv("SOCIALPROVE_INTERVAL", "430"))
 DAILY_CAP   = int(os.getenv("SOCIALPROVE_DAILY_CAP", "700"))
+SCREENSHOT_TIMEOUT = int(os.getenv("SOCIALPROVE_SCREENSHOT_TIMEOUT", "15000"))
+SCREENSHOT_WIDTH = int(os.getenv("SOCIALPROVE_SCREENSHOT_WIDTH", "1280"))
+SCREENSHOT_HEIGHT = int(os.getenv("SOCIALPROVE_SCREENSHOT_HEIGHT", "800"))
 
 USER_AGENT  = "ProvBot/1.0 (Numbers Protocol Reference Agent; +https://numbersprotocol.io)"
 
@@ -58,6 +63,75 @@ POSTS_PER_SUB    = 25
 
 MASTODON_TAGS    = ["MachineLearning", "LLM", "AIagent", "generativeai", "deeplearning"]
 DEVTO_TAGS       = ["machinelearning", "ai", "llm", "deeplearning"]
+
+
+def _attach_provenance_commit(capture, nid: str, metadata: dict) -> None:
+    try:
+        capture.update(
+            nid,
+            commit_message="SocialProve provenance commit",
+            custom_metadata=metadata,
+        )
+        logger.debug(f"provenance commit attached nid={nid}")
+    except Exception as exc:
+        logger.warning(f"provenance commit failed nid={nid} err={exc}")
+
+
+def _register_screenshot_or_json(
+    capture,
+    browser,
+    url: str,
+    caption: str,
+    record: dict,
+    *,
+    prefix: str,
+) -> str | None:
+    timestamp = datetime.now(timezone.utc)
+    tmp_png = f"/tmp/{prefix}_{os.getpid()}_{int(time.time())}.png"
+
+    if url:
+        result = capture_page_screenshot(
+            browser,
+            url,
+            tmp_png,
+            timestamp=timestamp,
+            timeout_ms=SCREENSHOT_TIMEOUT,
+            width=SCREENSHOT_WIDTH,
+            height=SCREENSHOT_HEIGHT,
+            user_agent=USER_AGENT,
+            logger=logger,
+        )
+        if result is not None and os.path.exists(tmp_png):
+            content_hash, excerpt = result
+            payload = {
+                **record,
+                "screenshot_at": timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "content_hash": f"sha256:{content_hash}",
+                "content_excerpt": excerpt,
+            }
+            try:
+                nid = register_with_retry(capture, tmp_png, caption, AGENT_SHORT)
+            finally:
+                if os.path.exists(tmp_png):
+                    os.unlink(tmp_png)
+            if nid:
+                _attach_provenance_commit(capture, nid, payload)
+            return nid
+
+    if os.path.exists(tmp_png):
+        os.unlink(tmp_png)
+
+    fallback = {
+        **record,
+        "registered_at": timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "screenshot": False,
+    }
+    tmp_json = write_json_tmp(fallback, prefix=f"{prefix}_fallback_")
+    try:
+        return register_with_retry(capture, tmp_json, f"{caption} | no-screenshot", AGENT_SHORT)
+    finally:
+        if os.path.exists(tmp_json):
+            os.unlink(tmp_json)
 
 
 # ── Reddit OAuth ──────────────────────────────────────────────────────────────
@@ -95,7 +169,7 @@ def _reddit_posts(subreddit: str, token: str) -> list[dict]:
     return [c["data"] for c in resp.json().get("data", {}).get("children", []) if c.get("data")]
 
 
-def run_reddit(capture, seen: set, cap: DailyCap, token: str) -> int:
+def run_reddit(capture, seen: set, cap: DailyCap, token: str, browser) -> int:
     registered = 0
     for subreddit in SUBREDDITS:
         if not cap.check():
@@ -157,20 +231,22 @@ def run_reddit(capture, seen: set, cap: DailyCap, token: str) -> int:
                 "posted_at":       ts_post,
                 "registered_at":   ts_now,
             }
-            tmp = write_json_tmp(record, prefix="socialprove_reddit_")
-            try:
-                caption = (
-                    f"{AGENT_ID} | r/{subreddit} | "
-                    f"{post.get('title','')[:70]} | {ts_post}"
-                )
-                nid = register_with_retry(capture, tmp, caption, AGENT_SHORT)
-                if nid:
-                    seen.add(dedup_key)
-                    cap.record()
-                    registered += 1
-            finally:
-                if os.path.exists(tmp):
-                    os.unlink(tmp)
+            caption = (
+                f"{AGENT_ID} | r/{subreddit} | "
+                f"{post.get('title','')[:70]} | {ts_post}"
+            )
+            nid = _register_screenshot_or_json(
+                capture,
+                browser,
+                record["permalink"],
+                caption,
+                record,
+                prefix="socialprove_reddit",
+            )
+            if nid:
+                seen.add(dedup_key)
+                cap.record()
+                registered += 1
             time.sleep(2)
 
         time.sleep(3)
@@ -201,7 +277,7 @@ def _devto_articles(tag: str) -> list[dict]:
     return resp.json()
 
 
-def run_fallback(capture, seen: set, cap: DailyCap) -> int:
+def run_fallback(capture, seen: set, cap: DailyCap, browser) -> int:
     registered = 0
     ts_now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -235,20 +311,22 @@ def run_fallback(capture, seen: set, cap: DailyCap) -> int:
                 "posted_at":    post.get("created_at", ""),
                 "registered_at": ts_now,
             }
-            tmp = write_json_tmp(record, prefix="socialprove_masto_")
-            try:
-                caption = (
-                    f"{AGENT_ID} | Mastodon | #{tag} | "
-                    f"@{acct.get('acct','')} | {post.get('created_at','')[:10]}"
-                )
-                nid = register_with_retry(capture, tmp, caption, AGENT_SHORT)
-                if nid:
-                    seen.add(dedup_key)
-                    cap.record()
-                    registered += 1
-            finally:
-                if os.path.exists(tmp):
-                    os.unlink(tmp)
+            caption = (
+                f"{AGENT_ID} | Mastodon | #{tag} | "
+                f"@{acct.get('acct','')} | {post.get('created_at','')[:10]}"
+            )
+            nid = _register_screenshot_or_json(
+                capture,
+                browser,
+                record["url"],
+                caption,
+                record,
+                prefix="socialprove_masto",
+            )
+            if nid:
+                seen.add(dedup_key)
+                cap.record()
+                registered += 1
             time.sleep(2)
         time.sleep(3)
 
@@ -280,24 +358,45 @@ def run_fallback(capture, seen: set, cap: DailyCap) -> int:
                 "published_at":  art.get("published_at", ""),
                 "registered_at": ts_now,
             }
-            tmp = write_json_tmp(record, prefix="socialprove_devto_")
-            try:
-                caption = (
-                    f"{AGENT_ID} | Dev.to | #{tag} | "
-                    f"{record['title'][:60]} | {record['published_at'][:10]}"
-                )
-                nid = register_with_retry(capture, tmp, caption, AGENT_SHORT)
-                if nid:
-                    seen.add(dedup_key)
-                    cap.record()
-                    registered += 1
-            finally:
-                if os.path.exists(tmp):
-                    os.unlink(tmp)
+            caption = (
+                f"{AGENT_ID} | Dev.to | #{tag} | "
+                f"{record['title'][:60]} | {record['published_at'][:10]}"
+            )
+            nid = _register_screenshot_or_json(
+                capture,
+                browser,
+                record["url"],
+                caption,
+                record,
+                prefix="socialprove_devto",
+            )
+            if nid:
+                seen.add(dedup_key)
+                cap.record()
+                registered += 1
             time.sleep(2)
         time.sleep(3)
 
     return registered
+
+
+def run_cycle(capture, seen: set, cap: DailyCap, reddit_token: str | None) -> int:
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(
+            headless=True,
+            args=[
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--disable-extensions",
+            ],
+        )
+        try:
+            if reddit_token:
+                return run_reddit(capture, seen, cap, reddit_token, browser)
+            return run_fallback(capture, seen, cap, browser)
+        finally:
+            browser.close()
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -316,16 +415,16 @@ def main():
     while True:
         if cap.check():
             if reddit_token:
-                n = run_reddit(capture, seen, cap, reddit_token)
+                n = run_cycle(capture, seen, cap, reddit_token)
                 # Refresh token if it expired mid-cycle
                 if n == 0 and cap.check():
                     logger.info("Refreshing Reddit OAuth token")
                     reddit_token = _reddit_token()
                     if not reddit_token:
                         logger.warning("Reddit token refresh failed — falling back to Mastodon+Dev.to")
-                        n = run_fallback(capture, seen, cap)
+                        n = run_cycle(capture, seen, cap, None)
             else:
-                n = run_fallback(capture, seen, cap)
+                n = run_cycle(capture, seen, cap, None)
 
             logger.info(f"cycle complete: registered={n} remaining={cap.remaining()}")
             save_seen_ids(AGENT_SHORT, seen)

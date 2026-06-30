@@ -13,8 +13,10 @@ RUN pip install --no-cache-dir -r requirements.txt \
     && playwright install --with-deps chromium
 
 COPY common.py .
+COPY proofsnap_capture.py .
 COPY newsprove.py .
 COPY socialprove.py .
+COPY assets ./assets
 
 RUN mkdir -p /app/state /tmp && chown -R agent:agent /app/state /tmp
 

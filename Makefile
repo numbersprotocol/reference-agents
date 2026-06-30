@@ -98,7 +98,8 @@ INSTALL_DIR := /opt/numbers-agents
 deploy-vps:
 	@echo "=== Deploying public agents to $(INSTALL_DIR) ==="
 	mkdir -p $(INSTALL_DIR)
-	cp common.py newsprove.py socialprove.py requirements.txt .env $(INSTALL_DIR)/
+	cp common.py proofsnap_capture.py newsprove.py socialprove.py requirements.txt .env $(INSTALL_DIR)/
+	cp -R assets $(INSTALL_DIR)/
 	cd $(INSTALL_DIR) && python3 -m venv venv && venv/bin/pip install -r requirements.txt
 	cd $(INSTALL_DIR) && venv/bin/python -m playwright install chromium
 	mkdir -p $(INSTALL_DIR)/state $(INSTALL_DIR)/logs

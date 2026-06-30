@@ -46,7 +46,6 @@ Usage:
   python newsprove.py
 """
 
-import hashlib
 import logging
 import os
 import re
@@ -56,7 +55,7 @@ from datetime import datetime, timezone
 
 import httpx
 from dotenv import load_dotenv
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+from playwright.sync_api import sync_playwright
 
 from common import (
     DailyCap,
@@ -69,6 +68,7 @@ from common import (
     slack_alert,
     write_json_tmp,
 )
+from proofsnap_capture import capture_page_screenshot
 
 load_dotenv()
 
@@ -114,7 +114,12 @@ RSS_USER_AGENT = "ProvBot/1.0 (Numbers Protocol Reference Agent; +https://number
 
 # ── Screenshot + content extraction ──────────────────────────────────────────
 
-def screenshot_page(browser, url: str, tmp_path: str) -> tuple[str, str] | None:
+def screenshot_page(
+    browser,
+    url: str,
+    tmp_path: str,
+    timestamp: datetime | None = None,
+) -> tuple[str, str] | None:
     """
     Open *url* in a fresh browser context.
 
@@ -127,52 +132,17 @@ def screenshot_page(browser, url: str, tmp_path: str) -> tuple[str, str] | None:
     The caller is responsible for deleting *tmp_path* afterwards.
     Each call uses an isolated context so cookies do not bleed between sites.
     """
-    context = None
-    page = None
-    try:
-        context = browser.new_context(
-            viewport={"width": SCREENSHOT_WIDTH, "height": SCREENSHOT_HEIGHT},
-            user_agent=BROWSER_UA,
-            java_script_enabled=True,
-            ignore_https_errors=True,
-        )
-        page = context.new_page()
-        page.goto(url, timeout=SCREENSHOT_TIMEOUT, wait_until="domcontentloaded")
-
-        # Content hash — SHA-256 of fully-rendered HTML
-        html = page.content()
-        content_hash = hashlib.sha256(html.encode("utf-8")).hexdigest()
-
-        # Visible text excerpt — normalise whitespace, cap at 500 chars
-        try:
-            raw_text = page.inner_text("body")
-            excerpt = " ".join(raw_text.split())[:500]
-        except Exception:
-            excerpt = ""
-
-        # Viewport screenshot
-        page.screenshot(path=tmp_path, full_page=False)
-
-        logger.debug(f"screenshot ok  hash={content_hash[:12]}  url={url[:70]}")
-        return content_hash, excerpt
-
-    except PlaywrightTimeout:
-        logger.warning(f"screenshot timeout ({SCREENSHOT_TIMEOUT}ms)  url={url[:80]}")
-        return None
-    except Exception as exc:
-        logger.warning(f"screenshot failed  url={url[:80]}  err={exc}")
-        return None
-    finally:
-        if page:
-            try:
-                page.close()
-            except Exception:
-                pass
-        if context:
-            try:
-                context.close()
-            except Exception:
-                pass
+    return capture_page_screenshot(
+        browser,
+        url,
+        tmp_path,
+        timestamp=timestamp or datetime.now(timezone.utc),
+        timeout_ms=SCREENSHOT_TIMEOUT,
+        width=SCREENSHOT_WIDTH,
+        height=SCREENSHOT_HEIGHT,
+        user_agent=BROWSER_UA,
+        logger=logger,
+    )
 
 
 # ── Registration helpers ──────────────────────────────────────────────────────
@@ -213,9 +183,10 @@ def _register_screenshot_with_commit(
     Falls back to JSON metadata registration if Playwright fails.
     """
     tmp_png = f"/tmp/newsprove_{os.getpid()}_{int(time.time())}.png"
-    registered_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    screenshot_time = datetime.now(timezone.utc)
+    registered_at = screenshot_time.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    result = screenshot_page(browser, url, tmp_png)
+    result = screenshot_page(browser, url, tmp_png, screenshot_time)
 
     if result is not None and os.path.exists(tmp_png):
         content_hash, excerpt = result

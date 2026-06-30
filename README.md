@@ -6,8 +6,8 @@ This repository intentionally includes only two public examples:
 
 | Agent | Source | What it proves |
 |---|---|---|
-| NewsProve | Hacker News + technology RSS feeds | News page provenance with screenshot, content hash, excerpt, and source metadata |
-| SocialProve | Reddit, with Mastodon and Dev.to fallback | Social post provenance with source metadata and content hashes for text posts |
+| NewsProve | Hacker News + technology RSS feeds | News page provenance with ProofSnap-style screenshot, content hash, excerpt, and source metadata |
+| SocialProve | Reddit, with Mastodon and Dev.to fallback | Social post provenance with ProofSnap-style screenshot, source metadata, and content hashes for text posts |
 
 The examples show how agents can preserve public digital records with Numbers Protocol provenance infrastructure for humans and AI. Human Truth. Machine Proof.
 
@@ -102,6 +102,9 @@ All configuration lives in `.env`.
 | `NEWSPROVE_SCREENSHOT_HEIGHT` | No | `800` | Screenshot viewport height |
 | `SOCIALPROVE_INTERVAL` | No | `430` | Seconds between SocialProve cycles |
 | `SOCIALPROVE_DAILY_CAP` | No | `200` | Daily registration cap for SocialProve |
+| `SOCIALPROVE_SCREENSHOT_TIMEOUT` | No | `15000` | Browser page-load timeout in milliseconds |
+| `SOCIALPROVE_SCREENSHOT_WIDTH` | No | `1280` | Screenshot viewport width |
+| `SOCIALPROVE_SCREENSHOT_HEIGHT` | No | `800` | Screenshot viewport height |
 | `REDDIT_CLIENT_ID` | No | - | Reddit OAuth client ID for SocialProve |
 | `REDDIT_CLIENT_SECRET` | No | - | Reddit OAuth client secret for SocialProve |
 | `SLACK_WEBHOOK_URL` | No | - | Optional Slack alert destination |
@@ -115,7 +118,7 @@ All configuration lives in `.env`.
 NewsProve monitors Hacker News and selected technology RSS feeds. For each new story it attempts to:
 
 1. Open the source URL in headless Chromium.
-2. Capture a screenshot.
+2. Capture a screenshot with the same default timestamp and ProofSnap wordmark treatment used by the ProofSnap extension.
 3. Hash the rendered HTML.
 4. Extract a short visible-text excerpt.
 5. Register the screenshot on Numbers Mainnet.
@@ -127,7 +130,19 @@ If a page blocks screenshots or times out, NewsProve falls back to registering a
 
 SocialProve monitors public AI and machine-learning communities. With Reddit OAuth configured, it reads configured subreddits through Reddit's API. Without Reddit credentials, it falls back to public Mastodon and Dev.to sources.
 
+For each post or article, SocialProve now attempts to capture the source page with the same ProofSnap-style timestamp and wordmark treatment as NewsProve. If the page blocks screenshots or times out, SocialProve falls back to registering a JSON metadata record.
+
 For Reddit self-posts, SocialProve stores a normalized excerpt and SHA-256 hash of the body text so the record can still be verified if the post is later edited or deleted.
+
+### ProofSnap-Style Screenshot Watermark
+
+Both public agents use `proofsnap_capture.py` to match the ProofSnap browser extension's default screenshot treatment:
+
+- Timestamp box enabled by default.
+- Timestamp format: `HH:MM` plus `DD/MM/YYYY Tue`.
+- Timestamp position: top-left.
+- Timestamp style: semi-transparent white rounded box, dark text.
+- ProofSnap wordmark: bottom-right, 70% opacity.
 
 ## Monitoring
 
@@ -172,8 +187,11 @@ The systemd services are in `systemd/`.
 ```text
 reference-agents/
 ├── common.py
+├── proofsnap_capture.py
 ├── newsprove.py
 ├── socialprove.py
+├── assets/
+│   └── Word-Logo-Bright-crop.png
 ├── monitor.py
 ├── status.py
 ├── requirements.txt

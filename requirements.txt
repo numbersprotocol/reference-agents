@@ -5,3 +5,4 @@ numbersprotocol-capture-sdk>=0.2.1
 httpx>=0.25.0
 python-dotenv>=1.0.0
 playwright>=1.42.0
+Pillow>=10.0.0
