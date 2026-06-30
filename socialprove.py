@@ -8,7 +8,7 @@ may later delete or edit.
 
 Primary source:  Reddit — r/MachineLearning, r/LocalLLaMA, r/artificial
                  via OAuth2 client_credentials (REDDIT_CLIENT_ID +
-                 REDDIT_CLIENT_SECRET from Omni Cloud Credentials).
+                 REDDIT_CLIENT_SECRET from .env).
 Fallback source: Mastodon (mastodon.social) + Dev.to, used automatically
                  if Reddit credentials are absent or OAuth fails.
 

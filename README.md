@@ -1,280 +1,220 @@
 # Numbers Protocol Reference Agents
 
-**"Agents Prove It" Campaign — Lever 1**
+Public reference agents for registering provenance records on Numbers Mainnet.
 
-Seven autonomous Python agents that register provenance records on Numbers Mainnet
-via the Capture SDK. Together they target **~1,600 on-chain transactions per day**
-as the campaign's anchor lever, at a running cost of **~$0–1/day**.
+This repository intentionally includes only two public examples:
 
----
-
-## Campaign Results
-
-> **Status:** Campaign in progress (Day 9 of 14, May 7–20 2026)
-
-| Metric | Value |
-|---|---|
-| **Total on-chain registrations** | **21,000+** provenance records |
-| **Peak daily output** | 6,227 registrations (Day 8) |
-| **Average daily output** | ~2,300 registrations/day |
-| **Campaign uptime sessions** | 27 sessions across 9 days |
-| **Longest session** | 7h 56min (Session 26) |
-| **Budget consumed** | ~$0.85 of $500 allocated (0.17%) |
-| **Numbers Mainnet daily txns** | 10,965 (vs. 3,000 target = +265%) |
-| **Numbers Mainnet wallets** | 50,097 (was 35,196 at campaign start) |
-
-### Per-agent contribution (Day 8 peak, 6,227 total)
-
-| Agent | Registrations | Use Case |
+| Agent | Source | What it proves |
 |---|---|---|
-| SocialProve | ~1,800 | Reddit AI community archival |
-| DataProve | ~1,200 | Weather, seismic, air quality data |
-| ProvArt | ~1,000 | AI-generated art with provenance |
-| NewsProve | ~900 | Hacker News story archival |
-| AgentLog | ~500 | arXiv paper analysis audit trails |
-| ResearchProve | ~500 | arXiv research paper provenance |
-| CodeProve | ~300 | GitHub code change provenance |
+| NewsProve | Hacker News + technology RSS feeds | News page provenance with screenshot, content hash, excerpt, and source metadata |
+| SocialProve | Reddit, with Mastodon and Dev.to fallback | Social post provenance with source metadata and content hashes for text posts |
 
-All registrations are verifiable on [mainnet.num.network](https://mainnet.num.network).
-Each record is captioned with `"Numbers Protocol Reference Agent #N"` for transparent attribution.
+The examples show how agents can preserve public digital records with Numbers Protocol provenance infrastructure for humans and AI. Human Truth. Machine Proof.
 
----
+## How To Join Fork & Build
 
-## Agents at a glance
+1. Fork this repository:
 
-| # | Agent | What it registers | Target |
-|---|---|---|---|
-| 1 | **ProvArt** | AI-generated images (Pollinations.ai free / Replicate paid) | 500/day |
-| 2 | **NewsProve** | Hacker News story metadata (title, URL, score, author) | 300/day |
-| 3 | **AgentLog** | arXiv paper analysis logs (LLM audit trail, template or Groq) | 200/day |
-| 4 | **DataProve** | Weather, crypto prices, air quality (Open-Meteo, CoinGecko, OpenAQ) | 200/day |
-| 5 | **SocialProve** | Reddit AI community posts (r/ML, r/LocalLLaMA, r/artificial) | 200/day |
-| 6 | **ResearchProve** | arXiv paper abstracts (cs.AI, cs.LG, cs.CV, cs.CL, stat.ML) | 150/day |
-| 7 | **CodeProve** | GitHub file-level changes in commits (numbersprotocol org + top AI repos) | 50/day |
-| | **Total** | | **1,600/day** |
+   https://github.com/numbersprotocol/reference-agents
 
-All agents are **publicly identified** on-chain as "Numbers Protocol Reference Agent #N".
-All wallets are auditable on [mainnet.num.network](https://mainnet.num.network).
+2. Clone your fork:
 
----
+   ```bash
+   git clone https://github.com/YOUR_GITHUB_USERNAME/reference-agents
+   cd reference-agents
+   ```
+
+3. Create your environment file:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+4. Add your Capture API token to `.env`:
+
+   ```bash
+   CAPTURE_TOKEN=your_capture_token_here
+   ```
+
+5. Run one or both public agents. Every successful registration creates a provenance record on Numbers Mainnet from the wallet tied to your Capture token.
+
+6. Keep the agents running during the campaign period, then submit your fork URL and Numbers Mainnet wallet address through the official campaign submission channel when announced.
 
 ## Prerequisites
 
-| Item | How | Time |
-|---|---|---|
-| **Capture API token** | Free at [docs.captureapp.xyz](https://docs.captureapp.xyz) — sign up, create a project, copy token | 5 min |
-| **Python 3.11+** | `python3 --version` | — |
-| **Docker + Compose** (recommended) | [docs.docker.com/get-docker](https://docs.docker.com/get-docker/) | — |
-| **GitHub PAT** (optional, for CodeProve) | [github.com/settings/tokens](https://github.com/settings/tokens) — `read:public_repo` scope | 2 min |
-| **Groq API key** (optional, for AgentLog LLM mode) | Free at [console.groq.com](https://console.groq.com) | 2 min |
+| Item | Required | Notes |
+|---|---:|---|
+| Python 3.11+ | Yes | Needed for local execution |
+| Capture API token | Yes | Used to register records on Numbers Mainnet |
+| Docker + Compose | Optional | Recommended for always-on local or VPS runs |
+| Reddit app credentials | Optional | Improves SocialProve reliability; fallback sources run without Reddit OAuth |
+| Slack webhook | Optional | Used only for alerts and monitor summaries |
 
----
-
-## Quick start (Docker — recommended)
+## Quick Start With Docker
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/numbersprotocol/reference-agents
-cd reference-agents
-
-# 2. Create your .env file
 cp .env.example .env
-nano .env          # Set CAPTURE_TOKEN at minimum
+nano .env
 
-# 3. Build and start all 7 agents
 docker compose up -d
-
-# 4. Verify agents are running
 docker compose ps
-docker compose logs -f provart   # tail one agent
-
-# 5. Check status
-python monitor.py
+docker compose logs -f newsprove
 ```
 
----
-
-## Quick start (local, no Docker)
+Stop the agents:
 
 ```bash
-# 1. Set up virtualenv and install
+docker compose down
+```
+
+## Quick Start Without Docker
+
+```bash
 make install
-
-# 2. Configure
-cp .env.example .env && nano .env   # set CAPTURE_TOKEN
-
-# 3. Start all agents in background
 make run-all
-
-# 4. Check status
 make status
+```
 
-# 5. Stop all agents
+Stop background agents started by `make run-all`:
+
+```bash
 make stop-all
 ```
 
----
-
-## VPS deployment (systemd, production)
+## Run A Single Agent
 
 ```bash
-# On the VPS, as root:
-git clone https://github.com/numbersprotocol/reference-agents /tmp/ref-agents
-cd /tmp/ref-agents
-cp .env.example /opt/numbers-agents/.env
-nano /opt/numbers-agents/.env    # set CAPTURE_TOKEN and optionally SLACK_WEBHOOK_URL
-
-make deploy-vps
-
-# Verify all 7 services are active:
-systemctl status 'numbers-*'
-
-# Tail logs:
-journalctl -u numbers-provart -f
+python newsprove.py
+python socialprove.py
 ```
 
----
+## Configuration
 
-## Configuration reference
-
-All settings are environment variables. See [`.env.example`](.env.example) for the full list.
+All configuration lives in `.env`.
 
 | Variable | Required | Default | Description |
-|---|---|---|---|
-| `CAPTURE_TOKEN` | **Yes** | — | Capture API token |
-| `PROVART_MODE` | No | `pollinations` | `pollinations` (free) or `replicate` ($0.002/image) |
-| `REPLICATE_API_TOKEN` | If replicate mode | — | Replicate API key |
-| `AGENTLOG_MODE` | No | `template` | `template` (no key) or `groq` (LLM calls) |
-| `GROQ_API_KEY` | If groq mode | — | Groq API key (free tier) |
-| `GITHUB_TOKEN` | No | — | GitHub PAT (5000 req/hr vs 60 without) |
-| `GITHUB_ORG` | No | `numbersprotocol` | GitHub org to monitor |
-| `SLACK_WEBHOOK_URL` | No | — | Slack Incoming Webhook for alerts |
-| `STATE_DIR` | No | `./state` | Directory for deduplication state files |
-| `LOG_LEVEL` | No | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+|---|---:|---|---|
+| `CAPTURE_TOKEN` | Yes | - | Capture API token used for registrations |
+| `NEWSPROVE_INTERVAL` | No | `290` | Seconds between NewsProve cycles |
+| `NEWSPROVE_DAILY_CAP` | No | `300` | Daily registration cap for NewsProve |
+| `NEWSPROVE_SCREENSHOT_TIMEOUT` | No | `15000` | Browser page-load timeout in milliseconds |
+| `NEWSPROVE_SCREENSHOT_WIDTH` | No | `1280` | Screenshot viewport width |
+| `NEWSPROVE_SCREENSHOT_HEIGHT` | No | `800` | Screenshot viewport height |
+| `SOCIALPROVE_INTERVAL` | No | `430` | Seconds between SocialProve cycles |
+| `SOCIALPROVE_DAILY_CAP` | No | `200` | Daily registration cap for SocialProve |
+| `REDDIT_CLIENT_ID` | No | - | Reddit OAuth client ID for SocialProve |
+| `REDDIT_CLIENT_SECRET` | No | - | Reddit OAuth client secret for SocialProve |
+| `SLACK_WEBHOOK_URL` | No | - | Optional Slack alert destination |
+| `STATE_DIR` | No | `./state` | Deduplication state directory |
+| `LOG_LEVEL` | No | `INFO` | Python log level |
 
----
+## Agent Details
 
-## How it works
+### NewsProve
 
-Each agent runs an infinite loop:
+NewsProve monitors Hacker News and selected technology RSS feeds. For each new story it attempts to:
 
-```
-fetch data from public API
-  → check dedup state (state/{agent}_seen.json)
-    → write metadata to temp JSON file
-      → capture.register(tmp_file, caption=...)  ← one on-chain txn
-        → update dedup state
-          → sleep(interval)
-```
+1. Open the source URL in headless Chromium.
+2. Capture a screenshot.
+3. Hash the rendered HTML.
+4. Extract a short visible-text excerpt.
+5. Register the screenshot on Numbers Mainnet.
+6. Attach structured source metadata to the registered asset.
 
-The `DailyCap` class enforces a per-agent daily transaction ceiling. When the cap is
-reached, the agent sleeps until the next 24-hour window opens.
+If a page blocks screenshots or times out, NewsProve falls back to registering a JSON metadata record.
 
-**Deduplication** uses a per-agent JSON file (e.g. `state/provart_seen.json`) to track
-IDs already registered. This survives container restarts.
+### SocialProve
 
-**Retry logic** (in `common.py`): up to 3 attempts per registration, with 5s / 10s / 15s
-back-off. After 3 failures, a Slack alert fires and the item is skipped.
+SocialProve monitors public AI and machine-learning communities. With Reddit OAuth configured, it reads configured subreddits through Reddit's API. Without Reddit credentials, it falls back to public Mastodon and Dev.to sources.
 
----
+For Reddit self-posts, SocialProve stores a normalized excerpt and SHA-256 hash of the body text so the record can still be verified if the post is later edited or deleted.
 
 ## Monitoring
 
+Print a local status report:
+
 ```bash
-# Print status report to stdout
 python monitor.py
+```
 
-# Post report to Slack
-python monitor.py --slack
+Output JSON:
 
-# JSON output (for dashboards)
+```bash
 python monitor.py --json
-
-# Add daily 9am Slack report to crontab:
-# 0 9 * * * cd /opt/numbers-agents && venv/bin/python monitor.py --slack
 ```
 
----
+Post to Slack:
 
-## Scaling
-
-If Week 1 tracking shows daily total below ~2,400 target:
-
-1. **Lower agent intervals** — e.g. `PROVART_INTERVAL=120` (from 173) raises ProvArt from 500→720/day
-2. **Raise daily caps** — e.g. `PROVART_DAILY_CAP=700`
-3. **Add a new agent** — duplicate any agent script, rename, and add a new service to `docker-compose.yml`
-4. **Deploy additional Capture tokens** — give each agent its own token for wallet-level attribution
-
-All free-tier data sources (HN, arXiv, Reddit, Open-Meteo, CoinGecko public API) have
-sufficient volume to support 2–3× the default daily caps.
-
----
-
-## Transparency / anti-Sybil note
-
-- All 7 agents are identified by their wallet addresses (public on mainnet.num.network)
-- Source code is open in this repo — anyone can verify what each agent registers
-- Each registration is a **distinct, legitimate provenance record** with a real external source
-- The campaign report will disaggregate: reference agents / human creators / community agents
-
----
-
-## Cost summary
-
-| Item | Monthly cost |
-|---|---|
-| AI image generation (ProvArt, Pollinations.ai mode) | **$0** |
-| AI image generation (ProvArt, Replicate mode) | ~$30 |
-| Capture API storage (47K files × 0.1 NUM) | ~$20/mo |
-| On-chain gas (~47K txns × 0.004 NUM) | ~$1/mo |
-| VPS / hosting | $5–10/mo (smallest DigitalOcean or Hetzner instance) |
-| All external APIs | $0 (all free tiers) |
-
----
-
-## File structure
-
+```bash
+python monitor.py --slack
 ```
+
+Check process and log-derived status:
+
+```bash
+python status.py
+```
+
+## VPS Deployment
+
+On a VPS, after cloning the repo and creating `.env`:
+
+```bash
+sudo make deploy-vps
+sudo systemctl status numbers-newsprove numbers-socialprove
+sudo journalctl -u numbers-newsprove -f
+```
+
+The systemd services are in `systemd/`.
+
+## File Structure
+
+```text
 reference-agents/
-├── common.py          # Shared utilities (Capture client, retry, dedup, Slack)
-├── provart.py         # Agent #1 — AI image provenance
-├── newsprove.py       # Agent #2 — News archival
-├── agentlog.py        # Agent #3 — LLM audit trails
-├── dataprove.py       # Agent #4 — Open data timestamping
-├── socialprove.py     # Agent #5 — Reddit AI community archival
-├── researchprove.py   # Agent #6 — arXiv research provenance
-├── codeprove.py       # Agent #7 — Code change provenance
-├── monitor.py         # Health check and status reporter
+├── common.py
+├── newsprove.py
+├── socialprove.py
+├── monitor.py
+├── status.py
 ├── requirements.txt
-├── .env.example
 ├── Dockerfile
 ├── docker-compose.yml
 ├── Makefile
-├── state/             # Deduplication state (auto-created)
-└── systemd/           # systemd unit files for VPS deployment
-    ├── numbers-provart.service
-    ├── numbers-newsprove.service
-    ├── numbers-agentlog.service
-    ├── numbers-dataprove.service
-    ├── numbers-socialprove.service
-    ├── numbers-researchprove.service
-    └── numbers-codeprove.service
+├── scripts/
+│   ├── check_dedup.py
+│   ├── check_state.py
+│   └── check_syntax.py
+├── systemd/
+│   ├── numbers-newsprove.service
+│   └── numbers-socialprove.service
+├── test_commit.py
+├── test_screenshot.py
+└── test_socialprove_selftext.py
 ```
 
----
+## Verification
 
-## Pre-launch checklist (from proposal Section 11)
+Run syntax checks:
 
-Before running in production, confirm with the Numbers Protocol team:
+```bash
+python scripts/check_syntax.py
+```
 
-- [ ] **Keke AI** supports 7+ concurrent agents at 200+ txns/day each — or use this VPS path
-- [ ] **Capture API gas rate**: 0.004 NUM or 0.016 NUM per txn (affects budget by ~$2)
-- [ ] **Reddit .json stability**: if blocked, set `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET`
-      for OAuth mode (agent auto-upgrades)
-- [ ] **CAPTURE_TOKEN** created and funded (NUM for storage + gas)
-- [ ] **SLACK_WEBHOOK_URL** configured for failure alerts
+Run import smoke tests:
 
----
+```bash
+make test
+```
 
-*Part of the "Agents Prove It" campaign — [Numbers Protocol](https://numbersprotocol.io)*
-*Human Truth. Machine Proof.*
+`make test` installs dependencies and Chromium for NewsProve screenshots.
+
+## Notes
+
+- The public repository exposes only NewsProve and SocialProve.
+- Deduplication state and logs are local runtime files and are ignored by Git.
+- `.env` must never be committed.
+- Each registered record is auditable on Numbers Mainnet.
+
+## License
+
+MIT

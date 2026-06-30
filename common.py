@@ -56,65 +56,15 @@ def setup_rotating_log(agent_name: str, log_dir: str = "logs", max_bytes: int = 
 # ── Capture client ────────────────────────────────────────────────────────────
 
 def get_capture():
-    """Return an initialised Capture client. Raises if no token is found.
-
-    Checks env vars in order:
-      1. Capture_Auth_Token  (Omni Cloud Credentials name)
-      2. CAPTURE_TOKEN       (generic / .env name)
-    """
+    """Return an initialised Capture client. Raises if no token is found."""
     from numbersprotocol_capture import Capture  # lazy import for test isolation
-    token = os.environ.get("Capture_Auth_Token") or os.environ.get("CAPTURE_TOKEN")
+    token = os.environ.get("CAPTURE_TOKEN")
     if not token:
         raise EnvironmentError(
-            "No Capture token found. Set Capture_Auth_Token (Omni Cloud Credentials) "
-            "or CAPTURE_TOKEN in .env. Free token at https://docs.captureapp.xyz"
+            "No Capture token found. Set CAPTURE_TOKEN in .env. "
+            "Create a token from the Capture developer docs/project console."
         )
     return Capture(token=token)
-
-
-def get_admin_headers() -> dict:
-    """Return HTTP headers with Django admin token authentication.
-
-    Uses Capture_Token_Admin_Omni (Omni Cloud Credentials) for elevated access
-    to the Numbers Protocol Django REST Framework backend.
-
-    Checks env vars in order:
-      1. Capture_Token_Admin_Omni  (Omni Cloud Credentials name)
-      2. CAPTURE_ADMIN_TOKEN       (generic / .env name)
-
-    Returns an empty dict (no Authorization header) if no admin token is found,
-    so callers fall back to unauthenticated access gracefully.
-    """
-    token = os.environ.get("Capture_Token_Admin_Omni") or os.environ.get("CAPTURE_ADMIN_TOKEN")
-    if not token:
-        return {}
-    return {"Authorization": f"Token {token}"}
-
-
-def admin_api_get(url: str, params: Optional[dict] = None, timeout: float = 30.0) -> dict:
-    """Perform a GET request to the Numbers Protocol API with admin auth.
-
-    Includes the Django admin token when available, falls back to
-    unauthenticated if the token is not configured.
-
-    Args:
-        url:     Full URL to request (e.g. https://api.numbersprotocol.io/api/v3/assets/).
-        params:  Optional query parameters dict.
-        timeout: Request timeout in seconds.
-
-    Returns:
-        Parsed JSON response as a dict.
-
-    Raises:
-        httpx.HTTPStatusError: on non-2xx responses.
-    """
-    headers = {
-        "User-Agent": "Numbers-RefAgents/1.0",
-        **get_admin_headers(),
-    }
-    resp = httpx.get(url, params=params, headers=headers, timeout=timeout)
-    resp.raise_for_status()
-    return resp.json()
 
 
 # ── Registration with retry ──────────────────────────────────────────────────
