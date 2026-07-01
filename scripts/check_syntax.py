@@ -1,7 +1,7 @@
 import ast
 import sys
 
-files = ["common.py", "newsprove.py", "socialprove.py", "monitor.py", "status.py"]
+files = ["common.py", "proofsnap_capture.py", "newsprove.py", "socialprove.py", "monitor.py", "status.py"]
 ok = True
 for f in files:
     try:
