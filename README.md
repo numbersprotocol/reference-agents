@@ -31,6 +31,22 @@ Fork this repository, build or run a provenance agent, and make at least 1,000 v
 - **Excluded accounts**: Numbers-operated accounts and wallets are not eligible, including `officialnumbers`, `defiancemedia`, `halasystem`, `0x20c90004cbe4445e9ef6740c5d1fa5f61e557bfe`, and other official test or operations accounts.
 - **Audit rule**: obvious non-agent, duplicate-abuse, or source-mismatched records can be excluded during manual review.
 
+### Ask Your Agent To Start
+
+If you are using an AI coding agent, copy this prompt:
+
+```text
+Help me join the Numbers Fork & Build campaign.
+
+First ask me whether I want to use NewsProve or SocialProve:
+- NewsProve currently covers Hacker News.
+- SocialProve currently covers Reddit.
+
+Then ask which news media or social media sources I want my fork to cover.
+
+After I answer, fork https://github.com/numbersprotocol/reference-agents as a public repo, configure my Capture API token privately in .env, update my repo README with the required "Fork & Build Submission" section, run the selected agent continuously, and return my public fork URL plus one sample NID and Verify URL.
+```
+
 ### How To Join
 
 1. Fork this repository and make sure your fork stays public:
@@ -62,11 +78,11 @@ Fork this repository, build or run a provenance agent, and make at least 1,000 v
 
    **SocialProve path**
 
-   Use `socialprove.py` or a fork of it. In your public repo, clearly list which social media sources you plan to cover, for example Reddit communities, Mastodon instances, Dev.to tags, or another public social source.
+   Use `socialprove.py` or a fork of it. The current SocialProve example covers Reddit. In your public repo, clearly list which social media sources you plan to cover, for example Reddit communities or another public social source.
 
    **NewsProve path**
 
-   Use `newsprove.py` or a fork of it. In your public repo, clearly list which news or media sources you plan to cover, for example Hacker News, RSS feeds, publisher sites, blogs, or other public media sources.
+   Use `newsprove.py` or a fork of it. The current NewsProve example covers Hacker News. In your public repo, clearly list which news or media sources you plan to cover, for example Hacker News, RSS feeds, publisher sites, blogs, or other public media sources.
 
 6. Run your agent. Every successful registration should create a Capture asset/NID with an integrity record traceable on Numbers Mainnet. The on-chain sender may be Numbers infrastructure, so campaign scoring uses the Capture account evidence below rather than direct wallet-sender activity.
 
