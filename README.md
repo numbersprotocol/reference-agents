@@ -11,9 +11,15 @@ This repository intentionally includes only two public examples:
 
 The examples show how agents can preserve public digital records with Numbers Protocol provenance infrastructure for humans and AI. Human Truth. Machine Proof.
 
-## How To Join Fork & Build
+## Fork & Build Campaign
 
-1. Fork this repository:
+Human Truth. Machine Proof.
+
+Fork this repository, build or run a provenance agent, and make at least 1,000 valid Numbers Mainnet transactions from the Capture account used by your agent.
+
+### How To Join
+
+1. Fork this repository and make sure your fork stays public:
 
    https://github.com/numbersprotocol/reference-agents
 
@@ -30,15 +36,45 @@ The examples show how agents can preserve public digital records with Numbers Pr
    cp .env.example .env
    ```
 
-4. Add your Capture API token to `.env`:
+4. Add your Capture API token to `.env`.
 
    ```bash
    CAPTURE_TOKEN=your_capture_token_here
    ```
 
-5. Run one or both public agents. Every successful registration creates a provenance record on Numbers Mainnet from the wallet tied to your Capture token.
+   Never commit your `.env`, Capture API token, private keys, passwords, or Reddit secrets.
 
-6. Keep the agents running during the campaign period, then submit your fork URL and Numbers Mainnet wallet address through the official campaign submission channel when announced.
+5. Choose one campaign path.
+
+   **SocialProve path**
+
+   Use `socialprove.py` or a fork of it. In your public repo, clearly list which social media sources you plan to cover, for example Reddit communities, Mastodon instances, Dev.to tags, or another public social source.
+
+   **NewsProve path**
+
+   Use `newsprove.py` or a fork of it. In your public repo, clearly list which news or media sources you plan to cover, for example Hacker News, RSS feeds, publisher sites, blogs, or other public media sources.
+
+6. Run your agent. Every successful registration creates a provenance record on Numbers Mainnet from the wallet tied to your Capture token.
+
+7. In your public fork, add a `Fork & Build Submission` section to your README with all campaign information. Use this format:
+
+   ```yaml
+   fork_and_build:
+     agent_path: "socialprove" # or "newsprove"
+     public_repo: "https://github.com/YOUR_GITHUB_USERNAME/reference-agents"
+     capture_account: "YOUR_PUBLIC_CAPTURE_ACCOUNT_OR_PROFILE"
+     scoring_wallet: "0xYOUR_NUMBERS_MAINNET_WALLET"
+     sample_nid: "baf..."
+     sample_verify_url: "https://verify.numbersprotocol.io/..."
+     target_sources:
+       - "Reddit r/MachineLearning"
+       - "Mastodon public AI posts"
+     run_notes: "How you run the agent and what you changed."
+   ```
+
+   `scoring_wallet` must be the Numbers Mainnet wallet tied to the Capture token used by the agent. This is the wallet used to count your 1,000 valid transactions.
+
+8. Submit only your public fork URL in the official campaign comment thread. We will read the campaign information from your repo.
 
 ## Prerequisites
 
