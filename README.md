@@ -15,7 +15,7 @@ The examples show how agents can preserve public digital records with Numbers Pr
 
 Human Truth. Machine Proof.
 
-Fork this repository, build or run a provenance agent, and make at least 1,000 valid Numbers Mainnet transactions from the Capture account used by your agent.
+Fork this repository, build or run a provenance agent, and make at least 1,000 valid Numbers Mainnet integrity transactions from the Capture account used by your agent.
 
 ### How To Join
 
@@ -54,7 +54,7 @@ Fork this repository, build or run a provenance agent, and make at least 1,000 v
 
    Use `newsprove.py` or a fork of it. In your public repo, clearly list which news or media sources you plan to cover, for example Hacker News, RSS feeds, publisher sites, blogs, or other public media sources.
 
-6. Run your agent. Every successful registration creates a provenance record on Numbers Mainnet from the wallet tied to your Capture token.
+6. Run your agent. Every successful registration should create a Capture asset integrity record traceable on Numbers Mainnet. The on-chain sender may be Numbers infrastructure, so campaign scoring uses the Capture account evidence below rather than direct wallet-sender activity.
 
 7. In your public fork, add a `Fork & Build Submission` section to your README with all campaign information. Use this format:
 
@@ -63,7 +63,9 @@ Fork this repository, build or run a provenance agent, and make at least 1,000 v
      agent_path: "socialprove" # or "newsprove"
      public_repo: "https://github.com/YOUR_GITHUB_USERNAME/reference-agents"
      capture_account: "YOUR_PUBLIC_CAPTURE_ACCOUNT_OR_PROFILE"
-     scoring_wallet: "0xYOUR_NUMBERS_MAINNET_WALLET"
+     capture_owner_name: "YOUR_CAPTURE_OWNER_NAME_IF_PUBLIC"
+     capture_asset_wallet: "0xYOUR_CAPTURE_ASSET_WALLET"
+     capture_vault_wallet: "0xYOUR_CAPTURE_VAULT_WALLET"
      sample_nid: "baf..."
      sample_verify_url: "https://verify.numbersprotocol.io/..."
      target_sources:
@@ -72,7 +74,9 @@ Fork this repository, build or run a provenance agent, and make at least 1,000 v
      run_notes: "How you run the agent and what you changed."
    ```
 
-   `scoring_wallet` must be the Numbers Mainnet wallet tied to the Capture token used by the agent. This is the wallet used to count your 1,000 valid transactions.
+   `capture_asset_wallet` is the asset/signature wallet shown in the Capture asset metadata. `capture_vault_wallet` is the managed Capture Vault wallet. We use these fields to confirm the Capture account identity.
+
+   The 1,000 transaction score is counted from the Capture asset `integrity_info` records created by your Capture account, not from transactions sent directly by either wallet. Capture may broadcast registrations through Numbers infrastructure, so the direct on-chain sender can be different from your asset wallet or vault wallet.
 
 8. Submit only your public fork URL in the official campaign comment thread. We will read the campaign information from your repo.
 
