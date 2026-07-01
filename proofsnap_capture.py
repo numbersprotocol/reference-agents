@@ -70,9 +70,11 @@ def apply_proofsnap_watermark(image_path: str | Path, timestamp: datetime) -> No
     time_width, time_height = _text_size(measure, time_text, time_font)
     date_width, date_height = _text_size(measure, date_text, date_font)
 
-    padding = 16
-    box_width = max(time_width, date_width) + padding * 2
-    box_height = time_height + date_height + padding * 2 + 12
+    horizontal_padding = max(22, width // 80)
+    vertical_padding = max(18, height // 45)
+    line_gap = max(12, height // 80)
+    box_width = max(time_width, date_width) + horizontal_padding * 2
+    box_height = time_height + date_height + vertical_padding * 2 + line_gap
     margin = 20
     pos_x = margin
     pos_y = 60
@@ -85,9 +87,9 @@ def apply_proofsnap_watermark(image_path: str | Path, timestamp: datetime) -> No
     )
 
     draw = ImageDraw.Draw(image)
-    draw.text((pos_x + padding, pos_y + padding), time_text, font=time_font, fill=(26, 26, 26, 255))
+    draw.text((pos_x + horizontal_padding, pos_y + vertical_padding), time_text, font=time_font, fill=(26, 26, 26, 255))
     draw.text(
-        (pos_x + padding, pos_y + padding + time_height + 8),
+        (pos_x + horizontal_padding, pos_y + vertical_padding + time_height + line_gap),
         date_text,
         font=date_font,
         fill=(26, 26, 26, 230),
