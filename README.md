@@ -17,6 +17,19 @@ Human Truth. Machine Proof.
 
 Fork this repository, build or run a provenance agent, and make at least 1,000 valid Numbers Mainnet integrity transactions from the Capture account used by your agent.
 
+### Campaign Rules
+
+- **Campaign window**: July 1-July 13, 2026.
+- **Final snapshot**: July 13, 2026 at 13:00 UTC.
+- **Prize pool**: 21,000 NUM total for audited qualifying forks.
+- **Qualification threshold**: at least 1,000 valid Numbers Mainnet integrity transactions from the Capture account used by your submitted agent.
+- **Submission method**: no campaign form. Submit only the public fork URL in the official campaign comment thread.
+- **Repo availability**: the fork must stay public through the final audit window.
+- **Network requirement**: only Numbers Mainnet registrations count.
+- **Trace requirement**: each counted transaction must be traceable from a Capture asset NID to a Numbers Mainnet integrity transaction hash.
+- **Excluded accounts**: Numbers-operated accounts and wallets are not eligible, including `officialnumbers`, `defiancemedia`, `halasystem`, `0x20c90004cbe4445e9ef6740c5d1fa5f61e557bfe`, and other official test or operations accounts.
+- **Audit rule**: obvious non-agent, duplicate-abuse, or source-mismatched records can be excluded during manual review.
+
 ### How To Join
 
 1. Fork this repository and make sure your fork stays public:
