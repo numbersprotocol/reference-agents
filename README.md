@@ -15,18 +15,19 @@ The examples show how agents can preserve public digital records with Numbers Pr
 
 Human Truth. Machine Proof.
 
-Fork this repository, build or run a provenance agent, and make at least 1,000 valid Numbers Mainnet integrity transactions from the Capture account used by your agent.
+Fork this repository, build or run a provenance agent, and make at least 1,000 valid captures from the Capture account used by your agent.
 
 ### Campaign Rules
 
-- **Campaign window**: July 1-July 13, 2026.
-- **Final snapshot**: July 13, 2026 at 13:00 UTC.
-- **Prize pool**: 21,000 NUM total for audited qualifying forks.
-- **Qualification threshold**: at least 1,000 valid Numbers Mainnet integrity transactions from the Capture account used by your submitted agent.
+- **Campaign window**: July 1-July 15, 2026.
+- **Final snapshot**: July 15, 2026 at 13:00 UTC.
+- **Prize pool**: 21,000 NUM total for audited qualifying forks: 10,000 NUM for first place (most valid captures), 7,000 NUM for second place, and 4,000 NUM for third place.
+- **Ranking metric**: valid captures created by the submitted Capture account.
+- **Qualification threshold**: at least 1,000 valid captures from the Capture account used by your submitted agent.
 - **Submission method**: no campaign form. Submit only the public fork URL in the official campaign comment thread.
 - **Repo availability**: the fork must stay public through the final audit window.
 - **Network requirement**: only Numbers Mainnet registrations count.
-- **Trace requirement**: each counted transaction must be traceable from a Capture asset NID to a Numbers Mainnet integrity transaction hash.
+- **Trace requirement**: each counted capture must be traceable from a Capture asset NID to at least one Numbers Mainnet integrity transaction hash.
 - **Excluded accounts**: Numbers-operated accounts and wallets are not eligible, including `officialnumbers`, `defiancemedia`, `halasystem`, `0x20c90004cbe4445e9ef6740c5d1fa5f61e557bfe`, and other official test or operations accounts.
 - **Audit rule**: obvious non-agent, duplicate-abuse, or source-mismatched records can be excluded during manual review.
 
@@ -67,7 +68,7 @@ Fork this repository, build or run a provenance agent, and make at least 1,000 v
 
    Use `newsprove.py` or a fork of it. In your public repo, clearly list which news or media sources you plan to cover, for example Hacker News, RSS feeds, publisher sites, blogs, or other public media sources.
 
-6. Run your agent. Every successful registration should create a Capture asset integrity record traceable on Numbers Mainnet. The on-chain sender may be Numbers infrastructure, so campaign scoring uses the Capture account evidence below rather than direct wallet-sender activity.
+6. Run your agent. Every successful registration should create a Capture asset/NID with an integrity record traceable on Numbers Mainnet. The on-chain sender may be Numbers infrastructure, so campaign scoring uses the Capture account evidence below rather than direct wallet-sender activity.
 
 7. In your public fork, add a `Fork & Build Submission` section to your README with all campaign information. Use this format:
 
@@ -89,7 +90,7 @@ Fork this repository, build or run a provenance agent, and make at least 1,000 v
 
    `capture_asset_wallet` is the asset/signature wallet shown in the Capture asset metadata. `capture_vault_wallet` is the managed Capture Vault wallet. We use these fields to confirm the Capture account identity.
 
-   The 1,000 transaction score is counted from the Capture asset `integrity_info` records created by your Capture account, not from transactions sent directly by either wallet. Capture may broadcast registrations through Numbers infrastructure, so the direct on-chain sender can be different from your asset wallet or vault wallet.
+   The valid capture score is counted from Capture assets created by your Capture account that have at least one Numbers Mainnet `integrity_info` transaction hash, not from transactions sent directly by either wallet. Capture may broadcast registrations through Numbers infrastructure, so the direct on-chain sender can be different from your asset wallet or vault wallet.
 
 8. Submit only your public fork URL in the official campaign comment thread. We will read the campaign information from your repo.
 
