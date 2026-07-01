@@ -19,8 +19,8 @@ Fork this repository, build or run a provenance agent, and make at least 1,000 v
 
 ### Campaign Rules
 
-- **Campaign window**: July 1-July 15, 2026.
-- **Final snapshot**: July 15, 2026 at 13:00 UTC.
+- **Campaign window**: July 3-July 16, 2026.
+- **Final snapshot**: July 16, 2026 at 13:00 UTC.
 - **Prize pool**: 21,000 NUM total for audited qualifying forks: 10,000 NUM for first place (most valid captures), 7,000 NUM for second place, and 4,000 NUM for third place.
 - **Ranking metric**: valid captures created by the submitted Capture account.
 - **Qualification threshold**: at least 1,000 valid captures from the Capture account used by your submitted agent.
